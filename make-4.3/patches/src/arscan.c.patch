@@ -1,0 +1,13 @@
+***************
+*** 406,409 ****
+--- 406,415 ----
+     Returns 0 if have scanned successfully.  */
+  
++ #ifdef __MVS__
++   #define ARMAG 0
++   struct ar_hdr {
++     char _;
++   };
++ #endif 
+  long int
+  ar_scan (const char *archive, ar_member_func_t function, const void *arg)

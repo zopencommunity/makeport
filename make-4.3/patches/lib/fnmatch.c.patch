@@ -1,13 +1,14 @@
 ***************
-*** 29,32 ****
---- 29,38 ----
+*** 28,32 ****
+  
   #include <errno.h>
-  #include <fnmatch.h>
-+ 
-+ #ifdef __MVS__
-+ # define FNM_FILE_NAME   FNM_PATHNAME   /* Preferred GNU name.  */
-+ # define FNM_LEADING_DIR (1 << 3)	/* Ignore `/...' after a match.  */
-+ # define FNM_CASEFOLD    (1 << 4)	/* Compare without regard to case.  */
-+ #endif
+! #include <fnmatch.h>
+  #include <ctype.h>
+  
+--- 28,33 ----
+  
+  #include <errno.h>
+! #include "fnmatch.h"
+! 
   #include <ctype.h>
   

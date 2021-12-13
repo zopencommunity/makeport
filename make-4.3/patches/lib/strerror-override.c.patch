@@ -1,0 +1,18 @@
+***************
+*** 19,24 ****
+  
+  #include <config.h>
+! 
+! #include "strerror-override.h"
+  
+  #include <errno.h>
+--- 19,27 ----
+  
+  #include <config.h>
+! #ifdef __MVS__
+! # include <stdlib.h>
+! #else
+! # include "strerror-override.h"
+! #endif
+  
+  #include <errno.h>

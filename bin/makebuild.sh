@@ -77,6 +77,8 @@ cd "${makebld}"
 # Setup the configuration 
 #
 ConfigOpts='CC=c99'
+rm -f $PWD/alloca.o
+touch $PWD/alloca.o
 echo "Configure Make"
 date
 export PATH=$PWD:$PATH
