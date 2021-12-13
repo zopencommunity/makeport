@@ -1,0 +1,13 @@
+***************
+*** 222,226 ****
+  #     include <malloc.h>
+  #    else
+! extern char *alloca ();
+  #    endif /* WINDOWS32 */
+  #   endif /* Not _AIX.  */
+--- 222,226 ----
+  #     include <malloc.h>
+  #    else
+! void *alloca (unsigned int size);
+  #    endif /* WINDOWS32 */
+  #   endif /* Not _AIX.  */

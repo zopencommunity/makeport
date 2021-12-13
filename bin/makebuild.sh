@@ -65,7 +65,6 @@ if ! [ -d "${MAKEPORT_ROOT}/${makebld}" ]; then
 		exit 16
 	fi
 fi
-exit 0
 
 managepatches.sh 
 rc=$?
@@ -73,49 +72,18 @@ if [ $rc -gt 0 ]; then
 	exit $rc
 fi
 
-cd "${makebld}/make"
+cd "${makebld}"
 #
 # Setup the configuration 
 #
+ConfigOpts='CC=c99'
 echo "Configure Make"
 date
 export PATH=$PWD:$PATH
 export LIBPATH=$PWD:$LIBPATH
-nohup sh ./Configure ${ConfigOpts} >/tmp/config.${makebld}.out 2>&1
+nohup sh ./configure ${ConfigOpts} >/tmp/config.${makebld}.out 2>&1
 rc=$?
 if [ $rc -gt 0 ]; then
 	echo "Configure of Make tree failed." >&2
 	exit $rc
 fi
-
-echo "Make Make"
-date
-
-nohup make >/tmp/make.${makebld}.out 2>&1
-rc=$?
-if [ $rc -gt 0 ]; then
-	echo "MAKE of Make tree failed." >&2
-	echo "Perform make minitest." >&2
-	echo "Make minitest Make"
-	date
-
-	nohup make minitest >/tmp/makeminitest.${makebld}.out 2>&1
-	rc=$?
-	if [ $rc -gt 0 ]; then
-		echo "MAKE minitest of Make tree failed." >&2
-		exit $rc
-	fi
-else
-	echo "Make Test Make"
-	date
-
-	nohup make test >/tmp/maketest.${makebld}.out 2>&1
-	rc=$?
-	if [ $rc -gt 0 ]; then
-		echo "MAKE test of Make tree failed." >&2
-		exit $rc 
-	fi
-fi
-date
-
-exit 0
