@@ -1,15 +1,13 @@
 ***************
-*** 152,157 ****
-  /* Match STRING against the filename pattern PATTERN, returning zero if
-     it matches, nonzero if not.  */
-! static int internal_fnmatch __P ((const char *pattern, const char *string,
-! 				  int no_leading_period, int flags))
-       internal_function;
-  static int
---- 152,157 ----
-  /* Match STRING against the filename pattern PATTERN, returning zero if
-     it matches, nonzero if not.  */
-! static int internal_fnmatch (const char *pattern, const char *string,
-! 				  int no_leading_period, int flags)
-       internal_function;
-  static int
+*** 29,32 ****
+--- 29,38 ----
+  #include <errno.h>
+  #include <fnmatch.h>
++ 
++ #ifdef __MVS__
++ # define FNM_FILE_NAME   FNM_PATHNAME   /* Preferred GNU name.  */
++ # define FNM_LEADING_DIR (1 << 3)	/* Ignore `/...' after a match.  */
++ # define FNM_CASEFOLD    (1 << 4)	/* Compare without regard to case.  */
++ #endif
+  #include <ctype.h>
+  
