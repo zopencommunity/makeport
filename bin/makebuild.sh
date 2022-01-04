@@ -90,7 +90,7 @@ if [ $rc -gt 0 ]; then
 	exit $rc
 fi
 
-nohup sh build.sh >/tmp/bild.${makebld}.out 2>&1 
+nohup sh build.sh >/tmp/build.${makebld}.out 2>&1 
 rc=$?
 if [ $rc -gt 0 ]; then
 	echo "Configure of Make tree failed." >&2

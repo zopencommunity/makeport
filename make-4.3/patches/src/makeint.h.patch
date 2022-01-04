@@ -1,0 +1,17 @@
+***************
+*** 461,465 ****
+  #endif
+  
+! #include <glob.h>
+  
+  #define NILF ((floc *)0)
+--- 461,469 ----
+  #endif
+  
+! #ifdef __MVS__
+! #include <../lib/glob.h>
+! #else
+! #include <../lib/glob.h>
+! #endif
+  
+  #define NILF ((floc *)0)

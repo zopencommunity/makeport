@@ -15,6 +15,7 @@ else
 		export PATH=/usr/local/bin:/bin:/usr/sbin
 	fi  
 	export LIBPATH=/lib:/usr/lib
+	export LIBOBJDIR=
 
 	# See makebuild.sh for valid values of MAKE_xxx variables
 	export MAKE_VRM="make-4.3" 

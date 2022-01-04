@@ -1,13 +1,47 @@
 ***************
+*** 344,348 ****
+    {
+      char ar_name[16];           /* Member file name, sometimes / terminated. */
+!     char ar_date[12];           /* File date, decimal seconds since Epoch.  */
+      char ar_uid[6], ar_gid[6];  /* User and group IDs, in ASCII decimal.  */
+      char ar_mode[8];            /* File mode, in ASCII octal.  */
+--- 344,348 ----
+    {
+      char ar_name[16];           /* Member file name, sometimes / terminated. */
+!     long ar_date;           /* File date, decimal seconds since Epoch.  */
+      char ar_uid[6], ar_gid[6];  /* User and group IDs, in ASCII decimal.  */
+      char ar_mode[8];            /* File mode, in ASCII octal.  */
+***************
 *** 406,409 ****
---- 406,415 ----
+--- 406,423 ----
      Returns 0 if have scanned successfully.  */
   
 + #ifdef __MVS__
++   /* this is all bogus */
 +   #define ARMAG 0
-+   struct ar_hdr {
-+     char _;
++   #define  AIAFMAG  "`\n"
++   struct ar_hdr
++   {
++     char ar_name[16];           /* Member file name, sometimes / terminated. */
++     char ar_date[12];		/* File date, decimal seconds since Epoch.  */
++     char ar_uid[6], ar_gid[6];  /* User and group IDs, in ASCII decimal.  */
++     char ar_mode[8];		/* File mode, in ASCII octal.  */
++     char ar_size[10];		/* File size, in ASCII decimal.  */
++     char ar_fmag[2];            /* Always contains ARFMAG.  */
 +   };
 + #endif 
   long int
   ar_scan (const char *archive, ar_member_func_t function, const void *arg)
+***************
+*** 906,910 ****
+      goto lose;
+    /* Advance member's time to that time */
+! #if defined(ARFMAG) || defined(ARFZMAG) || defined(AIAMAG) || defined(WINDOWS32)
+    for (ui = 0; ui < sizeof ar_hdr.ar_date; ui++)
+      ar_hdr.ar_date[ui] = ' ';
+--- 920,924 ----
+      goto lose;
+    /* Advance member's time to that time */
+! #if defined(ARFMAG) || defined(ARFZMAG) || defined(AIAMAG) || defined(WINDOWS32) || defined(__MVS__)
+    for (ui = 0; ui < sizeof ar_hdr.ar_date; ui++)
+      ar_hdr.ar_date[ui] = ' ';
