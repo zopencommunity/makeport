@@ -1,2 +1,4 @@
-make-4.3.64.dynamic.ascii/
+make-4.3.64.dynamic.ascii
 make.local
+tests/hw/hw
+*.o
