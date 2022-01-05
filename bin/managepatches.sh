@@ -51,12 +51,22 @@ for patch in $patches; do
  	if [ $patchsize -eq 0 ]; then
  		echo "Warning: patch file ${f} is empty - nothing to be done" >&2 
  	else 
+		# patch does not respect tags. convert the generated EBCDIC file to ASCII
  		out=`patch -c "${f}" <"${p}" 2>&1`
  		if [ $? -gt 0 ]; then
- 			echo "Patch of perl tree failed (${f})." >&2
+ 			echo "Patch of make tree failed (${f})." >&2
  			echo "${out}" >&2
  			exit 16
  		fi
+		out=`iconv -f "IBM-1047" -t "ISO8859-1" <"${f}" >"${f}.ascii"`
+ 		if [ $? -gt 0 ]; then
+ 			echo "iconv of patched file in make tree failed (${f})." >&2
+ 			echo "${out}" >&2
+ 			exit 16
+ 		fi
+		chtag -t -c "ISO8859-1" "${f}.ascii"
+		rm "${f}"
+		mv "${f}.ascii" "${f}"
 	fi
 done
 
