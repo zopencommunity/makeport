@@ -1,0 +1,39 @@
+***************
+*** 383,386 ****
+--- 383,387 ----
+    }
+  
++ print $short_filenames;
+    if (! $short_filenames && -f "ick") {
+      $osname = "vos";
+***************
+*** 393,405 ****
+      # Hmmm, BSD/OS 2.0's uname -a is excessively verbose.  Let's try it
+      # with switches first.
+!     eval "chop (\$osname = `sh -c 'uname -nmsr 2>&1'`)";
+!     if ($osname =~ /not found/i) {
+!       $osname = "(something posixy with no uname)";
+  
+!     } elsif ($@ ne "" || $?) {
+!       eval "chop (\$osname = `sh -c 'uname -a 2>&1'`)";
+!       if ($@ ne "" || $?) {
+!         $osname = "(something posixy)";
+!       }
+      }
+      $vos = 0;
+--- 394,408 ----
+      # Hmmm, BSD/OS 2.0's uname -a is excessively verbose.  Let's try it
+      # with switches first.
+!     if ($osname eq "") {
+!       eval "chop (\$osname = `uname -nmsr 2>&1`)";
+!       if ($osname =~ /not found/i) {
+!         $osname = "(something posixy with no uname)";
+  
+!       } elsif ($@ ne "" || $?) {
+!         eval "chop (\$osname = `uname -a 2>&1`)";
+!         if ($@ ne "" || $?) {
+!           $osname = "(something posixy)";
+!         }
+!      }
+      }
+      $vos = 0;

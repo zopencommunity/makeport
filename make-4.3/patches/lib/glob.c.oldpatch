@@ -1,29 +1,14 @@
 ***************
-*** 21,24 ****
---- 21,32 ----
-   #pragma alloca
-  #endif
-+ #ifdef __MVS__
-+   #ifndef alloca                                           
-+     #define alloca(x) __alloca(x)                          
-+     #pragma linkage(__alloca,builtin)                    
-+     void *__alloca(unsigned int x);                      
-+     #define __alloca __alloca
-+   #endif
-+ #endif
-  
-  #ifdef	HAVE_CONFIG_H
-***************
 *** 230,234 ****
   
   #ifndef __GNU_LIBRARY__
 ! # define __stat stat
   # ifdef STAT_MACROS_BROKEN
   #  undef S_ISDIR
---- 238,242 ----
+--- 230,234 ----
   
   #ifndef __GNU_LIBRARY__
-! # define __gnustat stat
+! # define __makestat stat
   # ifdef STAT_MACROS_BROKEN
   #  undef S_ISDIR
 ***************
@@ -34,13 +19,26 @@
 ! #  define __stat(fname, buf) __xstat (_STAT_VER, fname, buf)
   # endif
   #endif
---- 256,261 ----
+--- 248,253 ----
   # define getpwnam_r(name, bufp, buf, len, res) \
      __getpwnam_r (name, bufp, buf, len, res)
-! # ifndef __gnustat
-! #  define __gnustat(fname, buf) __xstat (_STAT_VER, fname, buf)
+! # ifndef __makestat
+! #  define __makestat(fname, buf) __xstat (_STAT_VER, fname, buf)
   # endif
   #endif
+***************
+*** 279,283 ****
+  # undef	GLOB_PERIOD
+  #endif
+! #include <glob.h>
+  
+  #if !defined __alloca
+--- 279,283 ----
+  # undef	GLOB_PERIOD
+  #endif
+! #include "glob.h"
+  
+  #if !defined __alloca
 ***************
 *** 285,290 ****
   #endif
@@ -49,13 +47,26 @@
 ! # define __stat stat
   #endif
   
---- 293,298 ----
+--- 285,290 ----
   #endif
   
-! #if !defined __gnustat
-! # define __gnustat stat
+! #if !defined __makestat
+! # define __makestat stat
   #endif
   
+***************
+*** 294,298 ****
+  extern char *getlogin __P ((void));
+  #endif
+! 
+  static
+  #if __GNUC__ - 0 >= 2
+--- 294,298 ----
+  extern char *getlogin __P ((void));
+  #endif
+! 
+  static
+  #if __GNUC__ - 0 >= 2
 ***************
 *** 817,821 ****
   	  || (((flags & GLOB_ALTDIRFUNC)
@@ -63,10 +74,10 @@
 ! 	       : __stat (dirname, &st)) == 0
   	      && S_ISDIR (st.st_mode)))
   	{
---- 825,829 ----
+--- 817,821 ----
   	  || (((flags & GLOB_ALTDIRFUNC)
   	       ? (*pglob->gl_stat) (dirname, &st)
-! 	       : __gnustat (dirname, &st)) == 0
+! 	       : __makestat (dirname, &st)) == 0
   	      && S_ISDIR (st.st_mode)))
   	{
 ***************
@@ -76,10 +87,10 @@
 ! 		       ? (*pglob->gl_stat) (dir, &st) : __stat (dir, &st)) != 0
   		      || !S_ISDIR (st.st_mode))
   		    /* No directory, ignore this entry.  */
---- 971,975 ----
+--- 963,967 ----
   		  /* First check whether this really is a directory.  */
   		  if (((flags & GLOB_ALTDIRFUNC)
-! 		       ? (*pglob->gl_stat) (dir, &st) : __gnustat (dir, &st)) != 0
+! 		       ? (*pglob->gl_stat) (dir, &st) : __makestat (dir, &st)) != 0
   		      || !S_ISDIR (st.st_mode))
   		    /* No directory, ignore this entry.  */
 ***************
@@ -89,10 +100,10 @@
 ! 	     : __stat (pglob->gl_pathv[i], &st)) == 0
   	    && S_ISDIR (st.st_mode))
   	  {
---- 1047,1051 ----
+--- 1039,1043 ----
   	if (((flags & GLOB_ALTDIRFUNC)
   	     ? (*pglob->gl_stat) (pglob->gl_pathv[i], &st)
-! 	     : __gnustat (pglob->gl_pathv[i], &st)) == 0
+! 	     : __makestat (pglob->gl_pathv[i], &st)) == 0
   	    && S_ISDIR (st.st_mode))
   	  {
 ***************
@@ -102,9 +113,9 @@
 ! 	       : __stat (fullname, &st)) == 0)
   	    /* We found this file to be existing.  Now tell the rest
   	       of the function to copy this name into the result.  */
---- 1280,1284 ----
+--- 1272,1276 ----
   	  if (((flags & GLOB_ALTDIRFUNC)
   	       ? (*pglob->gl_stat) (fullname, &st)
-! 	       : __gnustat (fullname, &st)) == 0)
+! 	       : __makestat (fullname, &st)) == 0)
   	    /* We found this file to be existing.  Now tell the rest
   	       of the function to copy this name into the result.  */

@@ -1,0 +1,13 @@
+***************
+*** 144,148 ****
+  # Link all the objects together.
+  echo "linking make..."
+! $CC $CFLAGS $LDFLAGS -L"$OUTLIB" $objs -lgnu $LOADLIBES -o "$OUTDIR/makenew$EXEEXT"
+  mv -f "$OUTDIR/makenew$EXEEXT" "$OUTDIR/make$EXEEXT"
+  
+--- 144,148 ----
+  # Link all the objects together.
+  echo "linking make..."
+! $CC $CFLAGS $LDFLAGS -L"$OUTLIB" -o "$OUTDIR/makenew$EXEEXT" $objs -lgnu $LOADLIBES
+  mv -f "$OUTDIR/makenew$EXEEXT" "$OUTDIR/make$EXEEXT"
+  

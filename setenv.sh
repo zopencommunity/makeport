@@ -4,7 +4,7 @@ if ! [ -f ./setenv.sh ]; then
 	echo "Need to source from the setenv.sh directory" >&2
 else
 	export _BPXK_AUTOCVT="ON"
-	export _CEE_RUNOPTS="FILETAG(AUTOCVT,AUTOTAG),POSIX(ON),TERMTHDACT(MSG)"
+	export _CEE_RUNOPTS="FILETAG(AUTOCVT,AUTOTAG),POSIX(ON),TERMTHDACT(DUMP)"
 	export _TAG_REDIR_ERR="txt"
 	export _TAG_REDIR_IN="txt"
 	export _TAG_REDIR_OUT="txt"
@@ -14,7 +14,7 @@ else
 	else
 		export PATH=/usr/local/bin:/bin:/usr/sbin
 	fi  
-	export LIBPATH=/lib:/usr/lib
+	export LIBPATH=/lib:/usr/lib:/usr/local/lib
 	export LIBOBJDIR=
 
 	# See makebuild.sh for valid values of MAKE_xxx variables
@@ -26,9 +26,9 @@ else
 	export MAKE_ROOT="${PWD}"
 	export GIT_ROOT=/rsusr/ported/bin
 
-	export PATH="${MAKE_ROOT}/bin:$PATH"
-
 	export MAKE_ENV="${MAKE_ROOT}/${MAKE_VRM}.${MAKE_OS390_TGT_AMODE}.${MAKE_OS390_TGT_LINK}.${MAKE_OS390_TGT_CODEPAGE}"
+
+	export PATH="${MAKE_ENV}:${MAKE_ROOT}/bin:$PATH"
 
 	echo "Environment set up for ${MAKE_ENV}"
 fi

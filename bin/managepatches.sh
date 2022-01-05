@@ -47,12 +47,16 @@ for patch in $patches; do
 		# Original file does not exist yet. Create original file
 		cp "${f}" "${o}"
 	fi
-
-	out=`patch -c "${f}" <"${p}" 2>&1`
-	if [ $? -gt 0 ]; then
-		echo "Patch of make tree failed (${f})." >&2
-		echo "${out}" >&2
-		exit 16
+ 	patchsize=`wc -c "${p}" | awk '{ print $1 }'` 
+ 	if [ $patchsize -eq 0 ]; then
+ 		echo "Warning: patch file ${f} is empty - nothing to be done" >&2 
+ 	else 
+ 		out=`patch -c "${f}" <"${p}" 2>&1`
+ 		if [ $? -gt 0 ]; then
+ 			echo "Patch of perl tree failed (${f})." >&2
+ 			echo "${out}" >&2
+ 			exit 16
+ 		fi
 	fi
 done
 
