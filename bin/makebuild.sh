@@ -57,7 +57,7 @@ makebld="${MAKE_VRM}.${MAKE_OS390_TGT_AMODE}.${MAKE_OS390_TGT_LINK}.${MAKE_OS390
 MAKEBLD_ROOT="${MAKEPORT_ROOT}/${makebld}";
 
 # if empty, remove directory
-if [ -z "$(ls -A ${MAKEBLD_ROOT})" ]; then
+if [ -d "${MAKEBLD_ROOT}" && -z "$(ls -A ${MAKEBLD_ROOT})" ]; then
   rmdir ${MAKEBLD_ROOT}
 fi
 
@@ -65,17 +65,9 @@ if ! [ -d "${MAKEBLD_ROOT}" ]; then
 	mkdir -p "${MAKEBLD_ROOT}"
 	echo "Clone Make"
 	date
-	(cd "${MAKEBLD_ROOT}" && git clone https://git.savannah.gnu.org/git/make.git)
-
+	git clone https://git.savannah.gnu.org/git/make.git ${MAKEBLD_ROOT}
 	if [ $? -gt 0 ]; then
 		echo "Unable to clone Make directory tree" >&2
-		exit 16
-	fi
-
-	chtag -R -h -t -cISO8859-1 "${MAKEBLD_ROOT}"
-
-	if [ $? -gt 0 ]; then
-		echo "Unable to tag Make directory tree as ASCII" >&2
 		exit 16
 	fi
 fi
