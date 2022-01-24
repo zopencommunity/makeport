@@ -42,17 +42,30 @@ if [ $? -gt 0 ]; then
 	exit 16
 fi
 
+MIN_GIT_VERSION="2.14.4"
+gitversion="$(git --version)"
+print "$(print "min version $MIN_GIT_VERSION\n$gitversion")" | sort -Vk3 2>/dev/null | tail -1 | grep -q git
+
+if [ $? -gt 0 ]; then
+    echo "Git version >= 2.14.4 is required";
+    exit 16
+fi
+
 MAKEPORT_ROOT="${PWD}"
 
 makebld="${MAKE_VRM}.${MAKE_OS390_TGT_AMODE}.${MAKE_OS390_TGT_LINK}.${MAKE_OS390_TGT_CODEPAGE}"
 MAKEBLD_ROOT="${MAKEPORT_ROOT}/${makebld}";
 
+# if empty, remove directory
+if [ -z "$(ls -A ${MAKEBLD_ROOT})" ]; then
+  rmdir ${MAKEBLD_ROOT}
+fi
+
 if ! [ -d "${MAKEBLD_ROOT}" ]; then
 	mkdir -p "${MAKEBLD_ROOT}"
 	echo "Clone Make"
 	date
-#	(cd "${MAKEBLD_ROOT}" && ${GIT_ROOT}/git clone https://git.savannah.gnu.org/git/make.git)
-	cp -rpf ${MAKE_ROOT}/make.local/${MAKE_VRM}/* "${MAKEBLD_ROOT}"
+	(cd "${MAKEBLD_ROOT}" && git clone https://git.savannah.gnu.org/git/make.git)
 
 	if [ $? -gt 0 ]; then
 		echo "Unable to clone Make directory tree" >&2

@@ -9,10 +9,12 @@ else
 	export _TAG_REDIR_IN="txt"
 	export _TAG_REDIR_OUT="txt"
 
+	export GIT_ROOT=/rsusr/ported/bin
+
 	if [ "$HOME" != '' ] && [ -d $HOME/bin ]; then
-		export PATH=$HOME/bin:/usr/local/bin:/bin:/usr/sbin
+		export PATH=$GIT_ROOT:$HOME/bin:/usr/local/bin:/bin:/usr/sbin:$PATH
 	else
-		export PATH=/usr/local/bin:/bin:/usr/sbin
+		export PATH=$GIT_ROOT:/usr/local/bin:/bin:/usr/sbin:$PATH
 	fi  
 	export LIBPATH=/lib:/usr/lib:/usr/local/lib
 	export LIBOBJDIR=
@@ -24,7 +26,6 @@ else
 	export MAKE_OS390_TGT_CODEPAGE="ascii" # ebcdic|ascii
 
 	export MAKE_ROOT="${PWD}"
-	export GIT_ROOT=/rsusr/ported/bin
 
 	export MAKE_ENV="${MAKE_ROOT}/${MAKE_VRM}.${MAKE_OS390_TGT_AMODE}.${MAKE_OS390_TGT_LINK}.${MAKE_OS390_TGT_CODEPAGE}"
 
