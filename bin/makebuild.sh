@@ -48,7 +48,7 @@ fi
 
 MAKEPORT_ROOT="${PWD}"
 
-echo "Logs will be stored to ${PERL_OS390_TGT_LOG_DIR}"
+echo "Logs will be stored to ${MAKE_OS390_TGT_LOG_DIR}"
 
 if [ ! -z "${MAKE_INSTALL_DIR}" ]; then
   install_dir=${MAKE_INSTALL_DIR}
