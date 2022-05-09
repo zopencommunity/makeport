@@ -9,12 +9,7 @@ else
 	export _TAG_REDIR_IN="txt"
 	export _TAG_REDIR_OUT="txt"
 
-	if [ "$HOME" != '' ] && [ -d $HOME/bin ]; then
-		export PATH=$HOME/bin:/usr/local/bin:/bin:/usr/sbin
-	else
-		export PATH=/usr/local/bin:/bin:/usr/sbin
-	fi  
-	export LIBPATH=/lib:/usr/lib:/usr/local/lib
+	export PATH=$PWD/bin:$PATH
 	export LIBOBJDIR=
 
 	# See makebuild.sh for valid values of MAKE_xxx variables
@@ -24,7 +19,9 @@ else
 	export MAKE_OS390_TGT_CODEPAGE="ascii" # ebcdic|ascii
 
 	export MAKE_ROOT="${PWD}"
-	export GIT_ROOT=/rsusr/ported/bin
+	if [ -z "$GIT_ROOT" ]; then
+		export GIT_ROOT=/rsusr/ported/bin
+	fi  
 
 	export MAKE_ENV="${MAKE_ROOT}/${MAKE_VRM}.${MAKE_OS390_TGT_AMODE}.${MAKE_OS390_TGT_LINK}.${MAKE_OS390_TGT_CODEPAGE}"
 

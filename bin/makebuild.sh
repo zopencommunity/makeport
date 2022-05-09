@@ -42,7 +42,31 @@ if [ $? -gt 0 ]; then
 	exit 16
 fi
 
+if [ -z "${MAKE_OS390_TGT_LOG_DIR}" ]; then
+  MAKE_OS390_TGT_LOG_DIR=/tmp
+fi
+
 MAKEPORT_ROOT="${PWD}"
+
+echo "Logs will be stored to ${PERL_OS390_TGT_LOG_DIR}"
+
+if [ ! -z "${MAKE_INSTALL_DIR}" ]; then
+  install_dir=${MAKE_INSTALL_DIR}
+else
+  install_dir="${HOME}/local/make"
+fi
+
+if [ -z "${MAKE_OS390_TGT_LOG_DIR}" ]; then
+  MAKE_OS390_TGT_LOG_DIR=/tmp
+fi
+mkdir -p $install_dir
+if [ $? -gt 0 ]; then
+  echo "Install directory $install_dir cannot be created"
+  exit 16
+fi
+ConfigOpts="--prefix=$install_dir"
+
+echo "Extra configure options: $ConfigOpts"
 
 makebld="${MAKE_VRM}.${MAKE_OS390_TGT_AMODE}.${MAKE_OS390_TGT_LINK}.${MAKE_OS390_TGT_CODEPAGE}"
 MAKEBLD_ROOT="${MAKEPORT_ROOT}/${makebld}";
@@ -51,20 +75,15 @@ if ! [ -d "${MAKEBLD_ROOT}" ]; then
 	mkdir -p "${MAKEBLD_ROOT}"
 	echo "Clone Make"
 	date
-#	(cd "${MAKEBLD_ROOT}" && ${GIT_ROOT}/git clone https://git.savannah.gnu.org/git/make.git)
-	cp -rpf ${MAKE_ROOT}/make.local/${MAKE_VRM}/* "${MAKEBLD_ROOT}"
-
+	#(cd "${MAKEBLD_ROOT}" && ${GIT_ROOT}/git clone https://git.savannah.gnu.org/git/make.git)
+  (cd "${MAKEBLD_ROOT}" && curl -k -o make-4.3.tar.gz https://ftp.gnu.org/gnu/make/make-4.3.tar.gz && chtag -r make-4.3.tar.gz && gunzip -dc make-4.3.tar.gz | pax -r && mv make-4.3 make)
 	if [ $? -gt 0 ]; then
 		echo "Unable to clone Make directory tree" >&2
 		exit 16
 	fi
-
-	chtag -R -h -t -cISO8859-1 "${MAKEBLD_ROOT}"
-
-	if [ $? -gt 0 ]; then
-		echo "Unable to tag Make directory tree as ASCII" >&2
-		exit 16
-	fi
+  chtag -R -tc 819 ${MAKEBLD_ROOT}
+  chmod 755 "${MAKEBLD_ROOT}make/configure"
+  (cd "${MAKEBLD_ROOT}/make" && git init . && git add . && git commit --allow-empty -m "Initialize repository")
 fi
 
 managepatches.sh 
@@ -73,7 +92,7 @@ if [ $rc -gt 0 ]; then
 	exit $rc
 fi
 
-cd "${makebld}"
+cd "${MAKEBLD_ROOT}/make"
 #
 # Setup the configuration 
 #
@@ -81,18 +100,32 @@ rm -f $PWD/alloca.o
 touch $PWD/alloca.o
 echo "Configure Make"
 date
+set -x
 export PATH=$PWD:$PATH
 export LIBPATH=$PWD:$LIBPATH
-nohup sh ./configure CC=c99 CFLAGS="-qlanglvl=extc1x -Wc,gonum,lp64 -qascii -D_OPEN_THREADS=3 -D_UNIX03_SOURCE=1 -DNSIG=39 -D_AE_BIMODAL=1 -D_XOPEN_SOURCE_EXTENDED -D_ALL_SOURCE -D_ENHANCED_ASCII_EXT=0xFFFFFFFF -D_OPEN_SYS_FILE_EXT=1 -D_OPEN_SYS_SOCK_IPV6 -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED  -qnose -qfloat=ieee -I${MAKEBLD_ROOT}/lib,${MAKEBLD_ROOT}/src,/usr/include" LDFLAGS='-Wl,LP64' >/tmp/config.${makebld}.out 2>&1
+nohup sh ./configure CC=xlclang CFLAGS="-D_ALL_SOURCE -qARCH=9 -qASCII -q64 -D_LARGE_TIME_API -D_OPEN_MSGQ_EXT -D_OPEN_SYS_FILE_EXT=1 -D_OPEN_SYS_SOCK_IPV6 -DPATH_MAX=1024 -D_UNIX03_SOURCE -D_UNIX03_THREADS -D_UNIX03_WITHDRAWN -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED" LDFLAGS='-q64' $ConfigOpts --disable-dependency-tracking > ${MAKE_OS390_TGT_LOG_DIR}/config.${makebld}.out 2>&1 
 rc=$?
 if [ $rc -gt 0 ]; then
 	echo "Configure of Make tree failed." >&2
 	exit $rc
 fi
 
-nohup sh build.sh >/tmp/build.${makebld}.out 2>&1 
+echo "Building Make"
+nohup sh build.sh >${MAKE_OS390_TGT_LOG_DIR}/build.${makebld}.out 2>&1 
 rc=$?
 if [ $rc -gt 0 ]; then
 	echo "Build of Make tree failed." >&2
 	exit $rc
+fi
+
+echo "Make Test"
+(cd tests && perl  ./run_make_tests.pl -srcdir ../ -make ../make) | tee ${MAKE_OS390_TGT_LOG_DIR}/test.${makebld}.txt || true
+
+
+echo "Make Install"
+nohup make install >${MAKE_OS390_TGT_LOG_DIR}/install.${makebld}.out 2>&1
+rc=$?
+if [ $rc -gt 0 ]; then
+  echo "MAKE install of Make tree failed." >&2
+  exit $rc
 fi
