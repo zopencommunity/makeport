@@ -100,10 +100,9 @@ rm -f $PWD/alloca.o
 touch $PWD/alloca.o
 echo "Configure Make"
 date
-set -x
 export PATH=$PWD:$PATH
 export LIBPATH=$PWD:$LIBPATH
-nohup sh ./configure CC=xlclang CFLAGS="-D_ALL_SOURCE -qARCH=9 -qASCII -q64 -D_LARGE_TIME_API -D_OPEN_MSGQ_EXT -D_OPEN_SYS_FILE_EXT=1 -D_OPEN_SYS_SOCK_IPV6 -DPATH_MAX=1024 -D_UNIX03_SOURCE -D_UNIX03_THREADS -D_UNIX03_WITHDRAWN -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED" LDFLAGS='-q64' $ConfigOpts --disable-dependency-tracking > ${MAKE_OS390_TGT_LOG_DIR}/config.${makebld}.out 2>&1 
+nohup sh ./configure CC=xlclang CFLAGS="-D_ALL_SOURCE -qASCII -q64 -D_LARGE_TIME_API -D_OPEN_MSGQ_EXT -D_OPEN_SYS_FILE_EXT=1 -D_OPEN_SYS_SOCK_IPV6 -DPATH_MAX=1024 -D_UNIX03_SOURCE -D_UNIX03_THREADS -D_UNIX03_WITHDRAWN -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED" LDFLAGS='-q64' $ConfigOpts > ${MAKE_OS390_TGT_LOG_DIR}/config.${makebld}.out 2>&1 
 rc=$?
 if [ $rc -gt 0 ]; then
 	echo "Configure of Make tree failed." >&2
@@ -119,8 +118,7 @@ if [ $rc -gt 0 ]; then
 fi
 
 echo "Make Test"
-(cd tests && perl  ./run_make_tests.pl -srcdir ../ -make ../make) | tee ${MAKE_OS390_TGT_LOG_DIR}/test.${makebld}.txt || true
-
+(cd tests && perl  ./run_make_tests.pl -srcdir ../ -make ../make 2>&1) | tee ${MAKE_OS390_TGT_LOG_DIR}/test.${makebld}.txt || true
 
 echo "Make Install"
 nohup make install >${MAKE_OS390_TGT_LOG_DIR}/install.${makebld}.out 2>&1

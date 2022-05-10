@@ -11,31 +11,6 @@ index 4c88b53..af584d1 100755
  mv -f "$OUTDIR/makenew$EXEEXT" "$OUTDIR/make$EXEEXT"
  
  echo done.
-diff --git a/configure b/configure
-index 852601d..3eeb517 100755
---- a/configure
-+++ b/configure
-@@ -6652,6 +6652,9 @@ else
- #   ifdef _AIX
-  #pragma alloca
- #   else
-+#    ifdef __MVS__
-+#     include <stdlib.h>
-+#    endif
- #    ifndef alloca /* predefined by HP cc +Olibcalls */
- void *alloca (size_t);
- #    endif
-@@ -17476,8 +17479,8 @@ esac
- case $host_os in #(
-   os2*|mingw*) :
-     make_cv_job_server=yes ;; #(
--  *) :
--     ;;
-+  os390) :
-+    make_cv_job_server=no ;; #(
- esac
- 
- # If we support it and the user didn't disable it, build with jobserver
 diff --git a/lib/concat-filename.c b/lib/concat-filename.c
 index 367e41d..db13a39 100644
 --- a/lib/concat-filename.c
@@ -372,10 +347,10 @@ index ae1f18b..844d85e 100644
          execvp (shell, new_argv);
  # endif
 diff --git a/src/main.c b/src/main.c
-index 78a27d7..f97f4e5 100644
+index 78a27d7..2816f59 100644
 --- a/src/main.c
 +++ b/src/main.c
-@@ -1046,14 +1046,173 @@ reset_jobserver (void)
+@@ -1046,14 +1046,172 @@ reset_jobserver (void)
    jobserver_auth = NULL;
  }
  
@@ -436,7 +411,6 @@ index 78a27d7..f97f4e5 100644
 +
 +int __pipe_ascii(int fd[2]) {
 +  int ret = __pipe(fd);
-+    return ret;
 +
 +  // Default ccsid for new pipes should be 819
 +  __chgfdccsid(fd[0], 819);
@@ -549,7 +523,7 @@ index 78a27d7..f97f4e5 100644
    static char *stdin_nm = 0;
    int makefile_status = MAKE_SUCCESS;
    struct goaldep *read_files;
-@@ -1072,6 +1231,12 @@ main (int argc, char **argv, char **envp)
+@@ -1072,6 +1230,12 @@ main (int argc, char **argv, char **envp)
    no_default_sh_exe = 1;
  #endif
  
@@ -562,7 +536,7 @@ index 78a27d7..f97f4e5 100644
    /* Useful for attaching debuggers, etc.  */
    SPIN ("main-entry");
  
-@@ -1815,6 +1980,7 @@ main (int argc, char **argv, char **envp)
+@@ -1815,6 +1979,7 @@ main (int argc, char **argv, char **envp)
  
              strcat (template, DEFAULT_TMPFILE);
              outfile = get_tmpfile (&stdin_nm, template);
@@ -571,15 +545,17 @@ index 78a27d7..f97f4e5 100644
                pfatal_with_name (_("fopen (temporary file)"));
              while (!feof (stdin) && ! ferror (stdin))
 diff --git a/src/makeint.h b/src/makeint.h
-index c428a36..491d219 100644
+index c428a36..bf0529d 100644
 --- a/src/makeint.h
 +++ b/src/makeint.h
-@@ -26,6 +26,10 @@ this program.  If not, see <http://www.gnu.org/licenses/>.  */
+@@ -26,6 +26,12 @@ this program.  If not, see <http://www.gnu.org/licenses/>.  */
  
  #define _GNU_SOURCE 1
  
 +#ifdef __MVS__
-+#include <os390.h>
++#include "os390.h"
++# include <fcntl.h>
++# define pipe(_p)        __pipe_ascii(_p)
 +#endif
 +
  /* AIX requires this to be the first thing in the file.  */
@@ -609,49 +585,46 @@ index de19e37..439cf91 100644
    return file;
  }
  
-diff --git a/src/os390.h b/src/os390.h
-new file mode 100644
-index 0000000..429aa74
---- /dev/null
-+++ b/src/os390.h
-@@ -0,0 +1,37 @@
-+#ifndef H_OS390
-+#define H_OS390 1
-+
-+#if (__CHARSET_LIB == 1)
-+#undef open
-+#define open __open_replaced
-+#include <fcntl.h>
-+#undef open
-+
-+#undef pipe 
-+#define pipe __pipe_replaced
-+#include <unistd.h>
-+#undef pipe
-+
-+int __open_ascii(const char *filename, int opts, ...);
-+int __pipe_ascii(int [2]);
-+
-+int open(const char* path, int oflag, ...);
-+#pragma map(open, "__open_ascii")
-+int pipe(int [2]);
-+#pragma map(pipe, "__open_ascii")
+diff --git a/src/output.c b/src/output.c
+index 2211749..e2b6bc7 100644
+--- a/src/output.c
++++ b/src/output.c
+@@ -364,7 +364,10 @@ output_dump (struct output *out)
+       /* Try to acquire the semaphore.  If it fails, dump the output
+          unsynchronized; still better than silently discarding it.
+          We want to keep this lock for as little time as possible.  */
++#ifndef __MVS__
++      //TODO: Implement alternative
+       void *sem = acquire_semaphore ();
 +#endif
-+
-+#include <string.h>
-+#include <sys/ps.h>
-+#include <unistd.h>
-+#include <limits.h>
-+#include <_Nascii.h>
-+#include <fcntl.h>
-+#include <libgen.h>
-+
-+int __getfdccsid(int fd);
-+int __setccsid(int fd, int ccsid);
-+int __chgfdccsid(int fd, unsigned short ccsid);
-+void __updateccsid(int fd, const char* path, int oflag, int perm);
-+
+ 
+       /* Log the working directory for this dump.  */
+       if (print_directory_flag && output_sync != OUTPUT_SYNC_RECURSE)
+@@ -379,8 +382,11 @@ output_dump (struct output *out)
+         log_working_directory (0);
+ 
+       /* Exit the critical section.  */
++#ifndef __MVS__
++      //TODO: Implement alternative
+       if (sem)
+         release_semaphore (sem);
 +#endif
+ 
+       /* Truncate and reset the output, in case we use it again.  */
+       if (out->out != OUTPUT_NONE)
+diff --git a/src/posixos.c b/src/posixos.c
+index 525f292..ee6e14d 100644
+--- a/src/posixos.c
++++ b/src/posixos.c
+@@ -37,7 +37,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.  */
+ /* This section provides OS-specific functions to support the jobserver.  */
+ 
+ /* These track the state of the jobserver pipe.  Passed to child instances.  */
+-static int job_fds[2] = { -1, -1 };
++static int job_fds[2] = {};
+ 
+ /* Used to signal read() that a SIGCHLD happened.  Always CLOEXEC.
+    If we use pselect() this will never be created and always -1.
 diff --git a/tests/test_driver.pl b/tests/test_driver.pl
 index f18e785..2ca84e0 100644
 --- a/tests/test_driver.pl
