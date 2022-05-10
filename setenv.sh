@@ -38,7 +38,7 @@ else
 	        export CURL_ROOT="${HOME}/zot/boot/curl"
 	fi
 	if [ "${PERL_ROOT}x" = "x" ]; then
-	        export PERL_ROOT="${HOME}/zot/boot/perl"
+	        export PERL_ROOT="${HOME}/zot/prod/perl"
 	fi
 	if [ "${M4_ROOT}x" = "x" ]; then
 		export M4_ROOT="${HOME}/zot/prod/m4"
@@ -53,6 +53,14 @@ else
  	export MY_ROOT="${PWD}"
         export PATH="${GIT_ROOT}/bin:${M4_ROOT}/bin:${CURL_ROOT}/bin:${PERL_ROOT}/bin:${GZIP_ROOT}/bin:${PATH}"
         export PATH="${MY_ROOT}/bin:${PATH}"
+
+        for libperl in $(find "${PERL_ROOT}" -name "libperl.so"); do
+        	lib=$(dirname "${libperl}")
+		export LIBPATH="${lib}:${LIBPATH}"
+		break
+        done
+	export PERL5LIB_ROOT=$( cd ${PERL_ROOT}/lib/perl5/5*; echo $PWD )
+        export PERL5LIB="${PERL5LIB_ROOT}:${PERL5LIB_ROOT}/os390"
 
 	export GIT_SSL_CAINFO="${MY_ROOT}/git-savannah-gnu-org-chain.pem"
 	echo "Environment set up for ${MAKE_VRM}"

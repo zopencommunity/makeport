@@ -1,5 +1,5 @@
 #!/bin/sh 
-set -x
+#set -x
 #
 # Pre-requisites: 
 #  - cd to the directory of this script before running the script   
@@ -35,6 +35,11 @@ print "$(print "min version $MIN_GIT_VERSION\n$gitversion")" | sort -Vk3 2>/dev/
 if [ $? -gt 0 ]; then
     echo "Git version >= 2.14.4 is required";
     exit 16
+fi
+
+if ! out=$( perl --version ) ; then
+	echo "Perl is required for testing make" >&2
+	exit 16
 fi
 
 MAKEPORT_ROOT="${PWD}"
