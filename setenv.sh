@@ -9,27 +9,30 @@ else
 	export _TAG_REDIR_IN="txt"
 	export _TAG_REDIR_OUT="txt"
 
-	export GIT_ROOT=/rsusr/ported/bin
-
-	if [ "$HOME" != '' ] && [ -d $HOME/bin ]; then
-		export PATH=$GIT_ROOT:$HOME/bin:/usr/local/bin:/bin:/usr/sbin:$PATH
-	else
-		export PATH=$GIT_ROOT:/usr/local/bin:/bin:/usr/sbin:$PATH
-	fi  
-	export LIBPATH=/lib:/usr/lib:/usr/local/lib
-	export LIBOBJDIR=
-
 	# See makebuild.sh for valid values of MAKE_xxx variables
 	export MAKE_VRM="make-4.3" 
-	export MAKE_OS390_TGT_AMODE="64" # 31|64
-	export MAKE_OS390_TGT_LINK="dynamic" # static|dynamic
-	export MAKE_OS390_TGT_CODEPAGE="ascii" # ebcdic|ascii
 
-	export MAKE_ROOT="${PWD}"
+	if [ "${GIT_ROOT}x" = "x" ]; then
+	        export GIT_ROOT="${HOME}/zot/boot/git"
+	fi
+	if [ "${CURL_ROOT}x" = "x" ]; then
+	        export CURL_ROOT="${HOME}/zot/boot/curl"
+	fi
+	if [ "${PERL_ROOT}x" = "x" ]; then
+	        export PERL_ROOT="${HOME}/zot/boot/perl"
+	fi
+	if [ "${M4_ROOT}x" = "x" ]; then
+		export M4_ROOT="${HOME}/zot/prod/m4"
+        fi
+        if [ "${MAKE_INSTALL_PREFIX}x" = "x" ]; then
+ 		export MAKE_INSTALL_PREFIX="${HOME}/zot/prod/make"
+        fi
 
-	export MAKE_ENV="${MAKE_ROOT}/${MAKE_VRM}.${MAKE_OS390_TGT_AMODE}.${MAKE_OS390_TGT_LINK}.${MAKE_OS390_TGT_CODEPAGE}"
+ 	export MY_ROOT="${PWD}"
+        export PATH="${GIT_ROOT}/bin:${M4_ROOT}/bin:${CURL_ROOT}/bin:${PERL_ROOT}/bin:${PATH}"
+        export PATH="${MY_ROOT}/bin:${PATH}"
+	export PATH="${MAKE_ROOT}/bin:$PATH"
 
-	export PATH="${MAKE_ENV}:${MAKE_ROOT}/bin:$PATH"
-
-	echo "Environment set up for ${MAKE_ENV}"
+	export GIT_SSL_CAINFO="${MY_ROOT}/git-savannah-gnu-org-chain.pem"
+	echo "Environment set up for ${MAKE_VRM}"
 fi

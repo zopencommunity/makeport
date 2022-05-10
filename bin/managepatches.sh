@@ -16,8 +16,8 @@ fi
 
 mydir="$(dirname $0)"
 
-if [ "${MAKE_ROOT}" = '' ]; then
-	echo "Need to set MAKE_ROOT - source setenv.sh" >&2
+if [ "${MY_ROOT}" = '' ]; then
+	echo "Need to set MY_ROOT - source setenv.sh" >&2
 	exit 16
 fi
 if [ "${MAKE_VRM}" = '' ]; then
@@ -26,10 +26,10 @@ if [ "${MAKE_VRM}" = '' ]; then
 fi
 
 makepatch="${MAKE_VRM}"
-makecode="${MAKE_VRM}.${MAKE_OS390_TGT_AMODE}.${MAKE_OS390_TGT_LINK}.${MAKE_OS390_TGT_CODEPAGE}"
+makecode="${MAKE_VRM}-build"
 
-CODE_ROOT="${MAKE_ROOT}/${makecode}"
-PATCH_ROOT="${MAKE_ROOT}/${makepatch}/patches"
+CODE_ROOT="${MY_ROOT}/${makecode}"
+PATCH_ROOT="${MY_ROOT}/${makepatch}/patches"
 commonpatches=`cd ${PATCH_ROOT} && find . -name "*.patch"`
 specificpatches=`cd ${PATCH_ROOT} && find . -name "*.patch${MAKE_OS390_TGT_CODEPAGE}"`
 patches="$commonpatches $specificpatches"
