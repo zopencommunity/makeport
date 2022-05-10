@@ -1,5 +1,5 @@
 #!/bin/sh 
-#set -x
+set -x
 #
 # Pre-requisites: 
 #  - cd to the directory of this script before running the script   
@@ -8,18 +8,6 @@
 #  - ensure you have access to c99
 #  - network connectivity to pull git source from org
 #
-if [ $# -ne 4 ]; then
-	if [ "${MAKE_VRM}x" = "x" ] ; then
-		echo "Either specify all target build options on the command-line or with environment variables\n" >&2
-
-		echo "Syntax: $0 [<vrm>]\n" >&2
-		echo "  where:\n" >&2
-		echo "  <vrm> is one of maint-5.34 or blead\n" >&2
-		exit 16
-	fi
-else
-	export MAKE_VRM="$1"
-fi
 
 if [ "${MY_ROOT}" = '' ]; then
 	echo "Need to set MY_ROOT - source setenv.sh" >&2
@@ -61,11 +49,10 @@ if [ -d "${MAKEBLD_ROOT}" ] && [ -z "$(ls -A ${MAKEBLD_ROOT})" ]; then
 fi
 
 if ! [ -d "${MAKEBLD_ROOT}" ]; then
-	mkdir -p "${MAKEBLD_ROOT}"
 	echo "Clone Make"
 	date
-	if [ "${GIT_URL}x" != "x" ] ; then
-		(curl -o "${MAKE_VRM}.tar.gz" "${TARBALL_URL}/${MAKE_VRM}.tar.gz" && chtag -r "${MAKE_VRM}.tar.gz" && gunzip -dc "${MAKE_VRM}.tar.gz" | pax -r && mv "${MAKE_VRM}" "${MAKEBLD_ROOT}" )
+	if [ "${TARBALL_URL}x" != "x" ] ; then
+		(curl -s -o "${MAKE_VRM}.tar.gz" "${TARBALL_URL}/${MAKE_VRM}.tar.gz" && chtag -r "${MAKE_VRM}.tar.gz" && gunzip -dc "${MAKE_VRM}.tar.gz" | pax -r && mv "${MAKE_VRM}" "${MAKEBLD_ROOT}" )
 	else
 		git clone "${GIT_URL}" "${MAKEBLD_ROOT}"
 	fi
@@ -73,6 +60,9 @@ if ! [ -d "${MAKEBLD_ROOT}" ]; then
 		echo "Unable to clone Make directory tree" >&2
 		exit 16
 	fi
+	chtag -R -tc 819 ${MAKEBLD_ROOT}
+	chmod 755 "${MAKEBLD_ROOT}/configure"
+	(cd "${MAKEBLD_ROOT}" && git init . && git add . && git commit --allow-empty -m "Initialize repository")
 fi
 
 managepatches.sh 
@@ -92,9 +82,9 @@ date
 export PATH=$PWD:$PATH
 export LIBPATH=$PWD:$LIBPATH
 export CC=xlclang
-export CFLAGS="-Wc,gonum,lp64 -qascii -D_OPEN_THREADS=3 -D_UNIX03_SOURCE=1 -DNSIG=39 -D_AE_BIMODAL=1 -D_XOPEN_SOURCE_EXTENDED -D_ALL_SOURCE -D_ENHANCED_ASCII_EXT=0xFFFFFFFF -D_OPEN_SYS_FILE_EXT=1 -D_OPEN_SYS_SOCK_IPV6 -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED  -qnose -qfloat=ieee -I${MAKEBLD_ROOT}/lib,${MAKEBLD_ROOT}/src,/usr/include"
+export CFLAGS="-D_ALL_SOURCE -qASCII -q64 -D_LARGE_TIME_API -D_OPEN_MSGQ_EXT -D_OPEN_SYS_FILE_EXT=1 -D_OPEN_SYS_SOCK_IPV6 -DPATH_MAX=1024 -D_UNIX03_SOURCE -D_UNIX03_THREADS -D_UNIX03_WITHDRAWN -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED"
 export LDFLAGS='-Wl,LP64'
-nohup sh ./configure >/tmp/config.${makebld}.out 2>&1
+nohup sh ./configure --prefix="${MAKE_INSTALL_PREFIX}" >/tmp/config.${makebld}.out 2>&1
 rc=$?
 if [ $rc -gt 0 ]; then
 	echo "Configure of Make tree failed." >&2
@@ -106,4 +96,15 @@ rc=$?
 if [ $rc -gt 0 ]; then
 	echo "Build of Make tree failed." >&2
 	exit $rc
+fi
+
+echo "Make Test"
+(cd tests && perl ./run_make_tests.pl -srcdir ../ -make ../make 2>&1) | tee /tmp/test.${makebld}.txt || true
+
+echo "Make Install"
+nohup make install >/tmp/install.${makebld}.out 2>&1
+rc=$?
+if [ $rc -gt 0 ]; then
+  echo "MAKE install of Make tree failed." >&2
+  exit $rc
 fi

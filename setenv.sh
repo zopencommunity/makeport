@@ -21,11 +21,13 @@ else
 # on your system
 #
  	gitsource=false
+	unset GIT_URL
+	unset TARBALL_URL
 	if $gitsource ; then
 		export MAKE_VRM="make-4.3"
 		export GIT_URL="https://git.savannah.gnu.org/git/make.git"
 	else
-            	export TARBALL_URL="https://ftp.gnu.org/gnu/make"
+            	export TARBALL_URL="http://ftp.gnu.org/gnu/make"
 		export MAKE_VRM="make-4.3"
 	fi
 
@@ -44,11 +46,13 @@ else
         if [ "${MAKE_INSTALL_PREFIX}x" = "x" ]; then
  		export MAKE_INSTALL_PREFIX="${HOME}/zot/prod/make"
         fi
+	if [ "${GZIP_ROOT}x" = "x" ]; then
+    		export GZIP_ROOT="${HOME}/zot/boot/gzip"
+    	fi
 
  	export MY_ROOT="${PWD}"
-        export PATH="${GIT_ROOT}/bin:${M4_ROOT}/bin:${CURL_ROOT}/bin:${PERL_ROOT}/bin:${PATH}"
+        export PATH="${GIT_ROOT}/bin:${M4_ROOT}/bin:${CURL_ROOT}/bin:${PERL_ROOT}/bin:${GZIP_ROOT}/bin:${PATH}"
         export PATH="${MY_ROOT}/bin:${PATH}"
-	export PATH="${MAKE_ROOT}/bin:$PATH"
 
 	export GIT_SSL_CAINFO="${MY_ROOT}/git-savannah-gnu-org-chain.pem"
 	echo "Environment set up for ${MAKE_VRM}"

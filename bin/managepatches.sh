@@ -1,11 +1,8 @@
 #!/bin/sh
 #
 # Manage patches
-# To create a new patch:
-#   -cd to patches directory, create any sub-directories if required, and create an empty patch file by touch'ing it
-# To refresh patches:
-#   -run managepatches
-#   -This will look at all the patch files, update them, and then patch the source files
+# To create or refresh patch:
+#   -perform a git diff of the affected files and redirect to a patch file
 #
 #set -x
 if [ $# -ne 0 ]; then
@@ -14,7 +11,7 @@ if [ $# -ne 0 ]; then
 	exit 8
 fi
 
-mydir="$(dirname $0)"
+# mydir="$(dirname $0)"
 
 if [ "${MY_ROOT}" = '' ]; then
 	echo "Need to set MY_ROOT - source setenv.sh" >&2
@@ -25,49 +22,36 @@ if [ "${MAKE_VRM}" = '' ]; then
         exit 16
 fi
 
-makepatch="${MAKE_VRM}-patches"
-makecode="${MAKE_VRM}-build"
+makepatch="${MAKE_VRM}"
+makecode="${MAKE_VRM}"
 
-CODE_ROOT="${MY_ROOT}/${makecode}"
-PATCH_ROOT="${MY_ROOT}/${makepatch}"
+CODE_ROOT="${MY_ROOT}/${makecode}-build"
+PATCH_ROOT="${MY_ROOT}/${makepatch}-patches"
 commonpatches=`cd ${PATCH_ROOT} && find . -name "*.patch"`
 specificpatches=`cd ${PATCH_ROOT} && find . -name "*.patch${MAKE_OS390_TGT_CODEPAGE}"`
 patches="$commonpatches $specificpatches"
+results=`(cd ${CODE_ROOT} && ${GIT_ROOT}/git status --porcelain --untracked-files=no 2>&1)`
+if [ "${results}" != '' ]; then
+  echo "Existing Changes are active in ${CODE_ROOT}. To re-apply patches, perform a git reset on ${CODE_ROOT} prior to running managepatches again."
+  exit 0	
+fi 
+
+failedcount=0
 for patch in $patches; do
-	rp="${patch%*.patch*}"
-	o="${CODE_ROOT}/${rp}.orig"
-	f="${CODE_ROOT}/${rp}"
 	p="${PATCH_ROOT}/${patch}"
 
-	if [ -f "${o}" ]; then
-		# Original file exists. Regenerate patch, then replace file with original version 
-		diff -C 2 -f "${o}" "${f}" | tail +3 >"${p}"
-		cp "${o}" "${f}"
-	else
-		# Original file does not exist yet. Create original file
-		cp "${f}" "${o}"
-	fi
- 	patchsize=`wc -c "${p}" | awk '{ print $1 }'` 
- 	if [ $patchsize -eq 0 ]; then
- 		echo "Warning: patch file ${f} is empty - nothing to be done" >&2 
- 	else 
-		# patch does not respect tags. convert the generated EBCDIC file to ASCII
- 		out=`patch -c "${f}" <"${p}" 2>&1`
- 		if [ $? -gt 0 ]; then
- 			echo "Patch of make tree failed (${f})." >&2
- 			echo "${out}" >&2
- 			exit 16
- 		fi
-		out=`iconv -f "IBM-1047" -t "ISO8859-1" <"${f}" >"${f}.ascii"`
- 		if [ $? -gt 0 ]; then
- 			echo "iconv of patched file in make tree failed (${f})." >&2
- 			echo "${out}" >&2
- 			exit 16
- 		fi
-		chtag -t -c "ISO8859-1" "${f}.ascii"
-		rm "${f}"
-		mv "${f}.ascii" "${f}"
+	patchsize=`wc -c "${p}" | awk '{ print $1 }'` 
+	if [ $patchsize -eq 0 ]; then
+		echo "Warning: patch file ${p} is empty - nothing to be done" >&2 
+	else 
+		echo "Applying ${p}"
+		out=`(cd ${CODE_ROOT} && ${GIT_ROOT}/git apply "${p}" 2>&1)`
+		if [ $? -gt 0 ]; then
+			echo "Patch of make tree failed (${p})." >&2
+			echo "${out}" >&2
+			failedcount=$((failedcount+1))
+		fi
 	fi
 done
 
-exit 0	
+exit $failedcount
