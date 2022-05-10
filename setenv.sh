@@ -11,6 +11,23 @@ else
 
 	# See makebuild.sh for valid values of MAKE_xxx variables
 	export MAKE_VRM="make-4.3" 
+# Note to build make you need to either use a tarball that is pre-configured
+# or clone the code from git.
+#
+# If you use the pre-configured make source tarball, you need a 'bootstrap' make
+# and you need curl to pull down the tarball
+#
+# If you clone the code from git, you need to already have the Autotools installed
+# on your system
+#
+ 	gitsource=false
+	if $gitsource ; then
+		export MAKE_VRM="make-4.3"
+		export GIT_URL="https://git.savannah.gnu.org/git/make.git"
+	else
+            	export TARBALL_URL="https://ftp.gnu.org/gnu/make"
+		export MAKE_VRM="make-4.3"
+	fi
 
 	if [ "${GIT_ROOT}x" = "x" ]; then
 	        export GIT_ROOT="${HOME}/zot/boot/git"

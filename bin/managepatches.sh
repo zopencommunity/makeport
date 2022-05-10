@@ -25,11 +25,11 @@ if [ "${MAKE_VRM}" = '' ]; then
         exit 16
 fi
 
-makepatch="${MAKE_VRM}"
+makepatch="${MAKE_VRM}-patches"
 makecode="${MAKE_VRM}-build"
 
 CODE_ROOT="${MY_ROOT}/${makecode}"
-PATCH_ROOT="${MY_ROOT}/${makepatch}/patches"
+PATCH_ROOT="${MY_ROOT}/${makepatch}"
 commonpatches=`cd ${PATCH_ROOT} && find . -name "*.patch"`
 specificpatches=`cd ${PATCH_ROOT} && find . -name "*.patch${MAKE_OS390_TGT_CODEPAGE}"`
 patches="$commonpatches $specificpatches"

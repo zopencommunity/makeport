@@ -64,7 +64,11 @@ if ! [ -d "${MAKEBLD_ROOT}" ]; then
 	mkdir -p "${MAKEBLD_ROOT}"
 	echo "Clone Make"
 	date
-	git clone https://git.savannah.gnu.org/git/make.git ${MAKEBLD_ROOT}
+	if [ "${GIT_URL}x" != "x" ] ; then
+		(curl -o "${MAKE_VRM}.tar.gz" "${TARBALL_URL}/${MAKE_VRM}.tar.gz" && chtag -r "${MAKE_VRM}.tar.gz" && gunzip -dc "${MAKE_VRM}.tar.gz" | pax -r && mv "${MAKE_VRM}" "${MAKEBLD_ROOT}" )
+	else
+		git clone "${GIT_URL}" "${MAKEBLD_ROOT}"
+	fi
 	if [ $? -gt 0 ]; then
 		echo "Unable to clone Make directory tree" >&2
 		exit 16
