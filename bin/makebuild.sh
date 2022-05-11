@@ -42,8 +42,17 @@ if [ $? -gt 0 ]; then
 	exit 16
 fi
 
+
 if [ -z "${MAKE_OS390_TGT_LOG_DIR}" ]; then
   MAKE_OS390_TGT_LOG_DIR=/tmp
+
+MIN_GIT_VERSION="2.14.4"
+gitversion="$(git --version)"
+print "$(print "min version $MIN_GIT_VERSION\n$gitversion")" | sort -Vk3 2>/dev/null | tail -1 | grep -q git
+
+if [ $? -gt 0 ]; then
+    echo "Git version >= 2.14.4 is required";
+    exit 16
 fi
 
 MAKEPORT_ROOT="${PWD}"
@@ -70,6 +79,11 @@ echo "Extra configure options: $ConfigOpts"
 
 makebld="${MAKE_VRM}.${MAKE_OS390_TGT_AMODE}.${MAKE_OS390_TGT_LINK}.${MAKE_OS390_TGT_CODEPAGE}"
 MAKEBLD_ROOT="${MAKEPORT_ROOT}/${makebld}";
+
+# if empty, remove directory
+if [ -d "${MAKEBLD_ROOT}" && -z "$(ls -A ${MAKEBLD_ROOT})" ]; then
+  rmdir ${MAKEBLD_ROOT}
+fi
 
 if ! [ -d "${MAKEBLD_ROOT}" ]; then
 	mkdir -p "${MAKEBLD_ROOT}"
