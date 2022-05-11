@@ -30,7 +30,7 @@ PATCH_ROOT="${MY_ROOT}/${makepatch}-patches"
 commonpatches=`cd ${PATCH_ROOT} && find . -name "*.patch"`
 specificpatches=`cd ${PATCH_ROOT} && find . -name "*.patch${MAKE_OS390_TGT_CODEPAGE}"`
 patches="$commonpatches $specificpatches"
-results=`(cd ${CODE_ROOT} && ${GIT_ROOT}/git status --porcelain --untracked-files=no 2>&1)`
+results=`(cd ${CODE_ROOT} && git status --porcelain --untracked-files=no 2>&1)`
 if [ "${results}" != '' ]; then
   echo "Existing Changes are active in ${CODE_ROOT}. To re-apply patches, perform a git reset on ${CODE_ROOT} prior to running managepatches again."
   exit 0	
@@ -45,7 +45,7 @@ for patch in $patches; do
 		echo "Warning: patch file ${p} is empty - nothing to be done" >&2 
 	else 
 		echo "Applying ${p}"
-		out=`(cd ${CODE_ROOT} && ${GIT_ROOT}/git apply "${p}" 2>&1)`
+		out=`(cd ${CODE_ROOT} && git apply "${p}" 2>&1)`
 		if [ $? -gt 0 ]; then
 			echo "Patch of make tree failed (${p})." >&2
 			echo "${out}" >&2
