@@ -9,32 +9,61 @@ else
 	export _TAG_REDIR_IN="txt"
 	export _TAG_REDIR_OUT="txt"
 
-	export PATH=$PWD/bin:$PATH
-
-	if [ "$HOME" != '' ] && [ -d $HOME/bin ]; then
-		export PATH=$GIT_ROOT:$HOME/bin:/usr/local/bin:/bin:/usr/sbin:$PATH
-	else
-		export PATH=$GIT_ROOT:/usr/local/bin:/bin:/usr/sbin:$PATH
-	fi  
-	export LIBPATH=/lib:/usr/lib:/usr/local/lib
-
 	export LIBOBJDIR=
 
 	# See makebuild.sh for valid values of MAKE_xxx variables
 	export MAKE_VRM="make-4.3" 
-	export MAKE_OS390_TGT_AMODE="64" # 31|64
-	export MAKE_OS390_TGT_LINK="dynamic" # static|dynamic
-	export MAKE_OS390_TGT_CODEPAGE="ascii" # ebcdic|ascii
+# Note to build make you need to either use a tarball that is pre-configured
+# or clone the code from git.
+#
+# If you use the pre-configured make source tarball, you need a 'bootstrap' make
+# and you need curl to pull down the tarball
+#
+# If you clone the code from git, you need to already have the Autotools installed
+# on your system
+#
+ 	gitsource=false
+	unset GIT_URL
+	unset TARBALL_URL
+	if $gitsource ; then
+		export MAKE_VRM="make-4.3"
+		export GIT_URL="https://git.savannah.gnu.org/git/make.git"
+	else
+            	export TARBALL_URL="http://ftp.gnu.org/gnu/make"
+		export MAKE_VRM="make-4.3"
+	fi
 
-	export MAKE_ROOT="${PWD}"
+	if [ "${GIT_ROOT}x" = "x" ]; then
+	        export GIT_ROOT="${HOME}/zot/boot/git"
+	fi
+	if [ "${CURL_ROOT}x" = "x" ]; then
+	        export CURL_ROOT="${HOME}/zot/boot/curl"
+	fi
+	if [ "${PERL_ROOT}x" = "x" ]; then
+	        export PERL_ROOT="${HOME}/zot/prod/perl"
+	fi
+	if [ "${M4_ROOT}x" = "x" ]; then
+		export M4_ROOT="${HOME}/zot/prod/m4"
+        fi
+        if [ "${MAKE_INSTALL_PREFIX}x" = "x" ]; then
+ 		export MAKE_INSTALL_PREFIX="${HOME}/zot/prod/make"
+        fi
+	if [ "${GZIP_ROOT}x" = "x" ]; then
+    		export GZIP_ROOT="${HOME}/zot/boot/gzip"
+    	fi
 
-	if [ -z "$GIT_ROOT" ]; then
-		export GIT_ROOT=/rsusr/ported/bin
-	fi  
+ 	export MY_ROOT="${PWD}"
+        export PATH="${GIT_ROOT}/bin:${M4_ROOT}/bin:${CURL_ROOT}/bin:${PERL_ROOT}/bin:${GZIP_ROOT}/bin:${PATH}"
+        export PATH="${MY_ROOT}/bin:${PATH}"
 
-	export MAKE_ENV="${MAKE_ROOT}/${MAKE_VRM}.${MAKE_OS390_TGT_AMODE}.${MAKE_OS390_TGT_LINK}.${MAKE_OS390_TGT_CODEPAGE}"
+        for libperl in $(find "${PERL_ROOT}" -name "libperl.so"); do
+        	lib=$(dirname "${libperl}")
+		export LIBPATH="${lib}:${LIBPATH}"
+		break
+        done
+	export PERL5LIB_ROOT=$( cd ${PERL_ROOT}/lib/perl5/5*; echo $PWD )
+        export PERL5LIB="${PERL5LIB_ROOT}:${PERL5LIB_ROOT}/os390"
 
-	export PATH="${MAKE_ENV}:${MAKE_ROOT}/bin:$PATH"
-
-	echo "Environment set up for ${MAKE_ENV}"
+	export GIT_SSL_CAINFO="${MY_ROOT}/git-savannah-gnu-org-chain.pem"
+	echo "Environment set up for ${MAKE_VRM}"
 fi
