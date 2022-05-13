@@ -13,8 +13,8 @@ fi
 
 # mydir="$(dirname $0)"
 
-if [ "${MAKE_ROOT}" = '' ]; then
-	echo "Need to set MAKE_ROOT - source setenv.sh" >&2
+if [ "${MY_ROOT}" = '' ]; then
+	echo "Need to set MY_ROOT - source setenv.sh" >&2
 	exit 16
 fi
 if [ "${MAKE_VRM}" = '' ]; then
@@ -23,14 +23,14 @@ if [ "${MAKE_VRM}" = '' ]; then
 fi
 
 makepatch="${MAKE_VRM}"
-makecode="${MAKE_VRM}.${MAKE_OS390_TGT_AMODE}.${MAKE_OS390_TGT_LINK}.${MAKE_OS390_TGT_CODEPAGE}"
+makecode="${MAKE_VRM}"
 
-CODE_ROOT="${MAKE_ROOT}/${makecode}/make"
-PATCH_ROOT="${MAKE_ROOT}/${makepatch}/patches"
+CODE_ROOT="${MY_ROOT}/${makecode}-build"
+PATCH_ROOT="${MY_ROOT}/${makepatch}-patches"
 commonpatches=`cd ${PATCH_ROOT} && find . -name "*.patch"`
 specificpatches=`cd ${PATCH_ROOT} && find . -name "*.patch${MAKE_OS390_TGT_CODEPAGE}"`
 patches="$commonpatches $specificpatches"
-results=`(cd ${CODE_ROOT} && ${GIT_ROOT}/git status --porcelain --untracked-files=no 2>&1)`
+results=`(cd ${CODE_ROOT} && git status --porcelain --untracked-files=no 2>&1)`
 if [ "${results}" != '' ]; then
   echo "Existing Changes are active in ${CODE_ROOT}. To re-apply patches, perform a git reset on ${CODE_ROOT} prior to running managepatches again."
   exit 0	
@@ -45,7 +45,7 @@ for patch in $patches; do
 		echo "Warning: patch file ${p} is empty - nothing to be done" >&2 
 	else 
 		echo "Applying ${p}"
-		out=`(cd ${CODE_ROOT} && ${GIT_ROOT}/git apply "${p}" 2>&1)`
+		out=`(cd ${CODE_ROOT} && git apply "${p}" 2>&1)`
 		if [ $? -gt 0 ]; then
 			echo "Patch of make tree failed (${p})." >&2
 			echo "${out}" >&2

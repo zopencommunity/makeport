@@ -8,27 +8,13 @@
 #  - ensure you have access to c99
 #  - network connectivity to pull git source from org
 #
-if [ $# -ne 4 ]; then
-	if [ "${MAKE_VRM}" = "" ] || [ "${MAKE_OS390_TGT_AMODE}" = "" ] || [ "{MAKE_OS390_TGT_LINK}" = "" ] || [ "{MAKE_OS390_TGT_CODEPAGE}" = "" ]; then
-		echo "Either specify all 4 target build options on the command-line or with environment variables\n" >&2
 
-		echo "Syntax: $0 [<vrm> <amode> <link> <codepage>]\n" >&2
-		echo "  where:\n" >&2
-		echo "  <vrm> is one of maint-5.34 or blead\n" >&2
-		echo "  <amode> is one of 31 or 64\n" >&2
-		echo "  <link> is one of static or dynamic\n" >&2
-		echo "  <codepage> is one of ascii or ebcdic\n" >&2
-		exit 16
-	fi
-else
-	export MAKE_VRM="$1"
-	export MAKE_OS390_TGT_AMODE="$2"
-	export MAKE_OS390_TGT_LINK="$3"
-	export MAKE_OS390_TGT_CODEPAGE="$4"
+if [ "${MY_ROOT}" = '' ]; then
+	echo "Need to set MY_ROOT - source setenv.sh" >&2
+	exit 16
 fi
-
-if [ "${MAKE_ROOT}" = '' ]; then
-	echo "Need to set MAKE_ROOT - source setenv.sh" >&2
+if [ "${GIT_ROOT}" = '' ]; then
+	echo "Need to set GIT_ROOT - source setenv.sh" >&2
 	exit 16
 fi
 if [ "${MAKE_VRM}" = '' ]; then
@@ -36,15 +22,16 @@ if [ "${MAKE_VRM}" = '' ]; then
 	exit 16
 fi
 
-whence c99 >/dev/null
+whence xlclang >/dev/null
 if [ $? -gt 0 ]; then
-	echo "c99 required to build Make. " >&2
+	echo "xlclang required to build Make. " >&2
 	exit 16
 fi
 
 
 if [ -z "${MAKE_OS390_TGT_LOG_DIR}" ]; then
   MAKE_OS390_TGT_LOG_DIR=/tmp
+fi
 
 MIN_GIT_VERSION="2.14.4"
 gitversion="$(git --version)"
@@ -53,6 +40,11 @@ print "$(print "min version $MIN_GIT_VERSION\n$gitversion")" | sort -Vk3 2>/dev/
 if [ $? -gt 0 ]; then
     echo "Git version >= 2.14.4 is required";
     exit 16
+fi
+
+if ! out=$( perl --version ) ; then
+	echo "Perl is required for testing make" >&2
+	exit 16
 fi
 
 MAKEPORT_ROOT="${PWD}"
@@ -77,27 +69,29 @@ ConfigOpts="--prefix=$install_dir"
 
 echo "Extra configure options: $ConfigOpts"
 
-makebld="${MAKE_VRM}.${MAKE_OS390_TGT_AMODE}.${MAKE_OS390_TGT_LINK}.${MAKE_OS390_TGT_CODEPAGE}"
+makebld="${MAKE_VRM}-build"
 MAKEBLD_ROOT="${MAKEPORT_ROOT}/${makebld}";
 
 # if empty, remove directory
-if [ -d "${MAKEBLD_ROOT}" && -z "$(ls -A ${MAKEBLD_ROOT})" ]; then
+if [ -d "${MAKEBLD_ROOT}" ] && [ -z "$(ls -A ${MAKEBLD_ROOT})" ]; then
   rmdir ${MAKEBLD_ROOT}
 fi
 
 if ! [ -d "${MAKEBLD_ROOT}" ]; then
-	mkdir -p "${MAKEBLD_ROOT}"
 	echo "Clone Make"
 	date
-	#(cd "${MAKEBLD_ROOT}" && ${GIT_ROOT}/git clone https://git.savannah.gnu.org/git/make.git)
-  (cd "${MAKEBLD_ROOT}" && curl -k -o make-4.3.tar.gz https://ftp.gnu.org/gnu/make/make-4.3.tar.gz && chtag -r make-4.3.tar.gz && gunzip -dc make-4.3.tar.gz | pax -r && mv make-4.3 make)
+	if [ "${TARBALL_URL}x" != "x" ] ; then
+		(curl -s -o "${MAKE_VRM}.tar.gz" "${TARBALL_URL}/${MAKE_VRM}.tar.gz" && chtag -r "${MAKE_VRM}.tar.gz" && gunzip -dc "${MAKE_VRM}.tar.gz" | pax -r && mv "${MAKE_VRM}" "${MAKEBLD_ROOT}" )
+	else
+		git clone "${GIT_URL}" "${MAKEBLD_ROOT}"
+	fi
 	if [ $? -gt 0 ]; then
 		echo "Unable to clone Make directory tree" >&2
 		exit 16
 	fi
-  chtag -R -tc 819 ${MAKEBLD_ROOT}
-  chmod 755 "${MAKEBLD_ROOT}make/configure"
-  (cd "${MAKEBLD_ROOT}/make" && git init . && git add . && git commit --allow-empty -m "Initialize repository")
+	chtag -R -tc 819 ${MAKEBLD_ROOT}
+	chmod 755 "${MAKEBLD_ROOT}/configure"
+	(cd "${MAKEBLD_ROOT}" && git init . && git add . && git commit --allow-empty -m "Initialize repository")
 fi
 
 managepatches.sh 
@@ -106,7 +100,7 @@ if [ $rc -gt 0 ]; then
 	exit $rc
 fi
 
-cd "${MAKEBLD_ROOT}/make"
+cd "${MAKEBLD_ROOT}"
 #
 # Setup the configuration 
 #
@@ -116,7 +110,10 @@ echo "Configure Make"
 date
 export PATH=$PWD:$PATH
 export LIBPATH=$PWD:$LIBPATH
-nohup sh ./configure CC=xlclang CFLAGS="-D_ALL_SOURCE -qASCII -q64 -D_LARGE_TIME_API -D_OPEN_MSGQ_EXT -D_OPEN_SYS_FILE_EXT=1 -D_OPEN_SYS_SOCK_IPV6 -DPATH_MAX=1024 -D_UNIX03_SOURCE -D_UNIX03_THREADS -D_UNIX03_WITHDRAWN -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED" LDFLAGS='-q64' $ConfigOpts > ${MAKE_OS390_TGT_LOG_DIR}/config.${makebld}.out 2>&1 
+export CC=xlclang
+export CFLAGS="-D_ALL_SOURCE -qASCII -q64 -D_LARGE_TIME_API -D_OPEN_MSGQ_EXT -D_OPEN_SYS_FILE_EXT=1 -D_OPEN_SYS_SOCK_IPV6 -DPATH_MAX=1024 -D_UNIX03_SOURCE -D_UNIX03_THREADS -D_UNIX03_WITHDRAWN -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED"
+export LDFLAGS='-q64'
+nohup sh ./configure --prefix="${MAKE_INSTALL_PREFIX}" >${MAKE_OS390_TGT_LOG_DIR}/config.${makebld}.out 2>&1
 rc=$?
 if [ $rc -gt 0 ]; then
 	echo "Configure of Make tree failed." >&2
