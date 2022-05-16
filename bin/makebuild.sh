@@ -51,21 +51,6 @@ MAKEPORT_ROOT="${PWD}"
 
 echo "Logs will be stored to ${MAKE_OS390_TGT_LOG_DIR}"
 
-if [ ! -z "${MAKE_INSTALL_DIR}" ]; then
-  install_dir=${MAKE_INSTALL_DIR}
-else
-  install_dir="${HOME}/local/make"
-fi
-
-mkdir -p $install_dir
-if [ $? -gt 0 ]; then
-  echo "Install directory $install_dir cannot be created"
-  exit 16
-fi
-ConfigOpts="--prefix=$install_dir"
-
-echo "Extra configure options: $ConfigOpts"
-
 makebld="${MAKE_VRM}-build"
 MAKEBLD_ROOT="${MAKEPORT_ROOT}/${makebld}";
 
@@ -107,7 +92,7 @@ echo "Configure Make"
 date
 export PATH=$PWD:$PATH
 export LIBPATH=$PWD:$LIBPATH
-export CC=xlclang
+export CC=njsc
 export CFLAGS="-D_ALL_SOURCE -qASCII -q64 -D_LARGE_TIME_API -D_OPEN_MSGQ_EXT -D_OPEN_SYS_FILE_EXT=1 -D_OPEN_SYS_SOCK_IPV6 -DPATH_MAX=1024 -D_UNIX03_SOURCE -D_UNIX03_THREADS -D_UNIX03_WITHDRAWN -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED"
 export LDFLAGS='-q64'
 nohup sh ./configure --prefix="${MAKE_INSTALL_PREFIX}" >${MAKE_OS390_TGT_LOG_DIR}/config.${makebld}.out 2>&1
