@@ -22,7 +22,7 @@ if [ "${MAKE_VRM}" = '' ]; then
 	exit 16
 fi
 
-whence xlclang >/dev/null
+type xlclang >/dev/null
 if [ $? -gt 0 ]; then
 	echo "xlclang required to build Make. " >&2
 	exit 16
