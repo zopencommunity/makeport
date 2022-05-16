@@ -120,3 +120,6 @@ if [ $rc -gt 0 ]; then
   echo "MAKE install of Make tree failed." >&2
   exit $rc
 fi
+
+echo "Copying z/OS install files to ${MAKE_INSTALL_PREFIX}"
+cp ../install.sh ${MAKE_INSTALL_PREFIX}/
