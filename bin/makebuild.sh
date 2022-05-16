@@ -57,9 +57,6 @@ else
   install_dir="${HOME}/local/make"
 fi
 
-if [ -z "${MAKE_OS390_TGT_LOG_DIR}" ]; then
-  MAKE_OS390_TGT_LOG_DIR=/tmp
-fi
 mkdir -p $install_dir
 if [ $? -gt 0 ]; then
   echo "Install directory $install_dir cannot be created"
