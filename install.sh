@@ -15,5 +15,5 @@ export PATH="${INSTALL_DIR}/bin:\$PATH"
 EOF
 
 echo "Make location: ${INSTALL_DIR}/bin/make"
-echo "\nIMPORTANT: Source the environment script prior to running perl using the dot (.) command:"
+echo "\nIMPORTANT: Source the environment script prior to running make using the dot (.) command:"
 echo ". ${INSTALL_DIR}/.env"
