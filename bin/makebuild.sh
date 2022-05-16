@@ -35,7 +35,7 @@ fi
 
 MIN_GIT_VERSION="2.14.4"
 gitversion="$(git --version)"
-print "$(print "min version $MIN_GIT_VERSION\n$gitversion")" | sort -Vk3 2>/dev/null | tail -1 | grep -q git
+echo "$(echo "min version $MIN_GIT_VERSION\n$gitversion")" | sort -Vk3 2>/dev/null | tail -1 | grep -q git
 
 if [ $? -gt 0 ]; then
     echo "Git version >= 2.14.4 is required";
