@@ -22,7 +22,7 @@ if [ "${MAKE_VRM}" = '' ]; then
 	exit 16
 fi
 
-whence xlclang >/dev/null
+type xlclang >/dev/null
 if [ $? -gt 0 ]; then
 	echo "xlclang required to build Make. " >&2
 	exit 16
@@ -35,7 +35,7 @@ fi
 
 MIN_GIT_VERSION="2.14.4"
 gitversion="$(git --version)"
-print "$(print "min version $MIN_GIT_VERSION\n$gitversion")" | sort -Vk3 2>/dev/null | tail -1 | grep -q git
+echo "$(echo "min version $MIN_GIT_VERSION\n$gitversion")" | sort -Vk3 2>/dev/null | tail -1 | grep -q git
 
 if [ $? -gt 0 ]; then
     echo "Git version >= 2.14.4 is required";
@@ -50,24 +50,6 @@ fi
 MAKEPORT_ROOT="${PWD}"
 
 echo "Logs will be stored to ${MAKE_OS390_TGT_LOG_DIR}"
-
-if [ ! -z "${MAKE_INSTALL_DIR}" ]; then
-  install_dir=${MAKE_INSTALL_DIR}
-else
-  install_dir="${HOME}/local/make"
-fi
-
-if [ -z "${MAKE_OS390_TGT_LOG_DIR}" ]; then
-  MAKE_OS390_TGT_LOG_DIR=/tmp
-fi
-mkdir -p $install_dir
-if [ $? -gt 0 ]; then
-  echo "Install directory $install_dir cannot be created"
-  exit 16
-fi
-ConfigOpts="--prefix=$install_dir"
-
-echo "Extra configure options: $ConfigOpts"
 
 makebld="${MAKE_VRM}-build"
 MAKEBLD_ROOT="${MAKEPORT_ROOT}/${makebld}";
@@ -138,3 +120,6 @@ if [ $rc -gt 0 ]; then
   echo "MAKE install of Make tree failed." >&2
   exit $rc
 fi
+
+echo "Copying z/OS install files to ${MAKE_INSTALL_PREFIX}"
+cp ../install.sh ${MAKE_INSTALL_PREFIX}/

@@ -27,9 +27,7 @@ makecode="${MAKE_VRM}"
 
 CODE_ROOT="${MY_ROOT}/${makecode}-build"
 PATCH_ROOT="${MY_ROOT}/${makepatch}-patches"
-commonpatches=`cd ${PATCH_ROOT} && find . -name "*.patch"`
-specificpatches=`cd ${PATCH_ROOT} && find . -name "*.patch${MAKE_OS390_TGT_CODEPAGE}"`
-patches="$commonpatches $specificpatches"
+patches=`cd ${PATCH_ROOT} && find . -name "*.patch"`
 results=`(cd ${CODE_ROOT} && git status --porcelain --untracked-files=no 2>&1)`
 if [ "${results}" != '' ]; then
   echo "Existing Changes are active in ${CODE_ROOT}. To re-apply patches, perform a git reset on ${CODE_ROOT} prior to running managepatches again."
