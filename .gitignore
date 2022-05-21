@@ -1,4 +1,6 @@
 make-4.3-build
+make-4.3
 make.local
+make
 tests/hw/hw
 *.o
