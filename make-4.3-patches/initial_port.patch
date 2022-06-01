@@ -666,18 +666,21 @@ index 525f292..ee6e14d 100644
  /* Used to signal read() that a SIGCHLD happened.  Always CLOEXEC.
     If we use pselect() this will never be created and always -1.
 diff --git a/tests/test_driver.pl b/tests/test_driver.pl
-index f18e785..2ca84e0 100644
+index f18e785..46544a5 100644
 --- a/tests/test_driver.pl
 +++ b/tests/test_driver.pl
-@@ -382,6 +382,7 @@ sub get_osname
-     chdir (".ostest") or &error ("Couldn't chdir to .ostest: $!\n", 1);
-   }
- 
-+print $short_filenames;
-   if (! $short_filenames && -f "ick") {
-     $osname = "vos";
-     $vos = 1;
-@@ -392,15 +393,17 @@ sub get_osname
+@@ -164,6 +164,10 @@ sub toplevel
+   foreach (# UNIX-specific things
+            'TZ', 'TMPDIR', 'HOME', 'USER', 'LOGNAME', 'PATH',
+            'LD_LIBRARY_PATH',
++           # z/OS specific things
++           'LIBPATH',
++           '_BPXK_AUTOCVT',
++           '_TAG_REDIR_IN', '_TAG_REDIR_ERR', '_TAG_REDIR_OUT',
+            # SAN things
+            'ASAN_OPTIONS', 'UBSAN_OPTIONS',
+            # Purify things
+@@ -392,15 +396,17 @@ sub get_osname
      # to not get ugly error messages if uname can't be found.
      # Hmmm, BSD/OS 2.0's uname -a is excessively verbose.  Let's try it
      # with switches first.
