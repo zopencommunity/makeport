@@ -1,3 +1,3 @@
 #!/bin/sh
 # Temporary - write a proper test
-exit 0
+exit 1
