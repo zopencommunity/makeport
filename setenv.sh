@@ -24,4 +24,5 @@ if [ "${PORT_TYPE}x" = "TARBALLx" ]; then
 	export PORT_CHECK="${PWD}/make-4.3/make"
 fi
 
-export PORT_MAKE='./build.sh'
+export PORT_MAKE="./build.sh"
+export PORT_CHECK="${PORT_ROOT}/makecheck.sh"
