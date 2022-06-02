@@ -11,7 +11,7 @@ export PORT_ROOT="${PWD}"
 export PORT_TYPE="TARBALL"
 
 export PORT_TARBALL_URL="https://ftp.gnu.org/gnu/make/make-4.3.tar.gz"
-export PORT_TARBALL_DEPS="curl gzip make m4 perl"
+export PORT_TARBALL_DEPS="curl gzip m4 perl"
 
 export PORT_GIT_URL="https://git.savannah.gnu.org/git/make.git"
 export PORT_GIT_DEPS="git make m4 perl autoconf automake help2man makeinfo xz"
