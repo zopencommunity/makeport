@@ -3,14 +3,14 @@ Place to share information about configure/build of m4 for z/OS (only deltas to 
 
 # pre-reqs
 You need perl, xlclang, and curl to download and unzip a tarball or git to build from scratch.
-Detailed dependencies are in setenv.sh
+Detailed dependencies are in buildenv
 
 You will also need a 'bootstrap' make to build using the tarball.
 
-To build, use build.sh from (https://github.com/ZOSOpenTools/utils) after setting up your environment, e.g.
+To build, use zopen build from (https://github.com/ZOSOpenTools/utils) after setting up your environment, e.g.
 ```
-. ./setenv.sh
-build.sh
+. ./buildenv
+zopen build
 ```
 
 For details on the build, see (https://zosopentools.github.io/meta/#/Guides/Porting)
