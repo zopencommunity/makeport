@@ -20,3 +20,20 @@ fi
 
 export ZOPEN_MAKE="./build.sh"
 export ZOPEN_CHECK="${ZOPEN_ROOT}/makecheck.sh"
+
+zopen_check_results()
+{
+#!/bin/sh
+# make should have 10 failures or less
+#
+chk="$2_check.log"
+
+set -x
+failures=$(grep ".* Tests in .* Categories Failed" ${chk} | cut -f1 -d' ')
+if [ ${failures} -gt 10 ]; then
+  exit 2
+else
+  exit 1
+fi
+}
+
