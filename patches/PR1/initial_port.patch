@@ -1,185 +1,36 @@
+diff --git a/Makefile.am b/Makefile.am
+index 8cc39c9..ff8989e 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -56,8 +56,10 @@ alloca_SRCS =	lib/alloca.c
+ 
+ loadavg_SRCS =	lib/getloadavg.c
+ 
++zos_SRCS =	src/os390.c
++
+ make_SOURCES =	$(make_SRCS)
+-EXTRA_make_SOURCES = $(amiga_SRCS) $(vms_SRCS)
++EXTRA_make_SOURCES = $(amiga_SRCS) $(vms_SRCS) $(zos_SRCS)
+ 
+ make_LDADD =	$(LIBOBJS) $(GUILE_LIBS) lib/libgnu.a $(GETLOADAVG_LIBS) \
+ 		@LIBINTL@
 diff --git a/build.sh b/build.sh
-index 4c88b53..af584d1 100755
+index 4c88b53..5a19fb3 100755
 --- a/build.sh
 +++ b/build.sh
-@@ -143,7 +143,7 @@ compile $OBJS
+@@ -143,7 +143,9 @@ compile $OBJS
  
  # Link all the objects together.
  echo "linking make..."
 -$CC $CFLAGS $LDFLAGS -L"$OUTLIB" $objs -lgnu $LOADLIBES -o "$OUTDIR/makenew$EXEEXT"
++set -x
 +$CC $CFLAGS $LDFLAGS -L"$OUTLIB" -o "$OUTDIR/makenew$EXEEXT" $objs -lgnu $LOADLIBES
++set +x
  mv -f "$OUTDIR/makenew$EXEEXT" "$OUTDIR/make$EXEEXT"
  
  echo done.
-diff --git a/lib/concat-filename.c b/lib/concat-filename.c
-index 367e41d..db13a39 100644
---- a/lib/concat-filename.c
-+++ b/lib/concat-filename.c
-@@ -27,6 +27,13 @@
- 
- #include "filename.h"
- 
-+#ifdef __MVS__
-+  /* msf - inefficient hack for now */
-+  char* stpcpy(char* dest, const char* src) {
-+    strcpy(dest,src);
-+    return &dest[strlen(dest)];
-+  }
-+#endif
- /* Concatenate a directory filename, a relative filename and an optional
-    suffix.  The directory may end with the directory separator.  The second
-    argument may not start with the directory separator (it is relative).
-diff --git a/lib/error.c b/lib/error.c
-index 3657b51..cdd5112 100644
---- a/lib/error.c
-+++ b/lib/error.c
-@@ -202,7 +202,10 @@ print_errno_message (int errnum)
- #endif
- }
- 
--static void _GL_ATTRIBUTE_FORMAT_PRINTF (3, 0) _GL_ARG_NONNULL ((3))
-+static void
-+#if _LIBC
-+   _GL_ATTRIBUTE_FORMAT_PRINTF (3, 0) _GL_ARG_NONNULL ((3))
-+#endif
- error_tail (int status, int errnum, const char *message, va_list args)
- {
- #if _LIBC
-diff --git a/lib/fnmatch.c b/lib/fnmatch.c
-index 4da8c5f..221864a 100644
---- a/lib/fnmatch.c
-+++ b/lib/fnmatch.c
-@@ -27,7 +27,8 @@ USA.  */
- #endif
- 
- #include <errno.h>
--#include <fnmatch.h>
-+#include "fnmatch.h"
-+
- #include <ctype.h>
- 
- #if HAVE_STRING_H || defined _LIBC
-diff --git a/lib/getloadavg.c b/lib/getloadavg.c
-index ebb6f5d..b54eb96 100644
---- a/lib/getloadavg.c
-+++ b/lib/getloadavg.c
-@@ -355,6 +355,10 @@
- #  endif /* Not UMAX_43.  */
- # endif /* UMAX */
- 
-+# ifdef __MVS__
-+  #undef DGUX
-+#endif
-+
- # ifdef DGUX
- #  include <sys/dg_sys_info.h>
- # endif
-diff --git a/lib/glob.c b/lib/glob.c
-index adad16f..aa57b92 100644
---- a/lib/glob.c
-+++ b/lib/glob.c
-@@ -20,6 +20,14 @@ USA.  */
- #if defined _AIX && !defined __GNUC__
-  #pragma alloca
- #endif
-+#ifdef __MVS__
-+  #ifndef alloca                                           
-+    #define alloca(x) __alloca2(x)                          
-+    #pragma linkage(__alloca2,builtin)                    
-+    void *__alloca2(unsigned int x);                      
-+    #define __alloca2 __alloca2
-+  #endif
-+#endif
- 
- #ifdef	HAVE_CONFIG_H
- # include <config.h>
-@@ -229,7 +237,7 @@ extern char *alloca ();
- #endif
- 
- #ifndef __GNU_LIBRARY__
--# define __stat stat
-+# define __gnustat stat
- # ifdef STAT_MACROS_BROKEN
- #  undef S_ISDIR
- # endif
-@@ -247,8 +255,8 @@ extern char *alloca ();
- # define readdir(str) __readdir (str)
- # define getpwnam_r(name, bufp, buf, len, res) \
-    __getpwnam_r (name, bufp, buf, len, res)
--# ifndef __stat
--#  define __stat(fname, buf) __xstat (_STAT_VER, fname, buf)
-+# ifndef __gnustat
-+#  define __gnustat(fname, buf) __xstat (_STAT_VER, fname, buf)
- # endif
- #endif
- 
-@@ -284,8 +292,8 @@ extern char *alloca ();
- # define __alloca alloca
- #endif
- 
--#if !defined __stat
--# define __stat stat
-+#if !defined __gnustat
-+# define __gnustat stat
- #endif
- 
- #ifdef HAVE_GETLOGIN_R
-@@ -816,7 +824,7 @@ glob (pattern, flags, errfunc, pglob)
-       if ((flags & GLOB_NOCHECK)
- 	  || (((flags & GLOB_ALTDIRFUNC)
- 	       ? (*pglob->gl_stat) (dirname, &st)
--	       : __stat (dirname, &st)) == 0
-+	       : __gnustat (dirname, &st)) == 0
- 	      && S_ISDIR (st.st_mode)))
- 	{
- 	  pglob->gl_pathv
-@@ -962,7 +970,7 @@ glob (pattern, flags, errfunc, pglob)
- 
- 		  /* First check whether this really is a directory.  */
- 		  if (((flags & GLOB_ALTDIRFUNC)
--		       ? (*pglob->gl_stat) (dir, &st) : __stat (dir, &st)) != 0
-+		       ? (*pglob->gl_stat) (dir, &st) : __gnustat (dir, &st)) != 0
- 		      || !S_ISDIR (st.st_mode))
- 		    /* No directory, ignore this entry.  */
- 		    continue;
-@@ -1038,7 +1046,7 @@ glob (pattern, flags, errfunc, pglob)
-       for (i = oldcount; i < pglob->gl_pathc; ++i)
- 	if (((flags & GLOB_ALTDIRFUNC)
- 	     ? (*pglob->gl_stat) (pglob->gl_pathv[i], &st)
--	     : __stat (pglob->gl_pathv[i], &st)) == 0
-+	     : __gnustat (pglob->gl_pathv[i], &st)) == 0
- 	    && S_ISDIR (st.st_mode))
- 	  {
-  	    size_t len = strlen (pglob->gl_pathv[i]) + 2;
-@@ -1271,7 +1279,7 @@ glob_in_dir (pattern, directory, flags, errfunc, pglob)
- # endif
- 	  if (((flags & GLOB_ALTDIRFUNC)
- 	       ? (*pglob->gl_stat) (fullname, &st)
--	       : __stat (fullname, &st)) == 0)
-+	       : __gnustat (fullname, &st)) == 0)
- 	    /* We found this file to be existing.  Now tell the rest
- 	       of the function to copy this name into the result.  */
- 	    flags |= GLOB_NOCHECK;
-diff --git a/lib/strerror-override.c b/lib/strerror-override.c
-index 61b7689..665c447 100644
---- a/lib/strerror-override.c
-+++ b/lib/strerror-override.c
-@@ -18,8 +18,11 @@
- /* Written by Bruno Haible <bruno@clisp.org>, 2010.  */
- 
- #include <config.h>
--
--#include "strerror-override.h"
-+#ifdef __MVS__
-+# include <stdlib.h>
-+#else
-+# include "strerror-override.h"
-+#endif
- 
- #include <errno.h>
- 
 diff --git a/src/arscan.c b/src/arscan.c
-index 3ce21db..06d9965 100644
+index 3ce21db..2a3e1f2 100644
 --- a/src/arscan.c
 +++ b/src/arscan.c
 @@ -331,7 +331,7 @@ ar_scan (const char *archive, ar_member_func_t function, const void *varg)
@@ -196,7 +47,7 @@ index 3ce21db..06d9965 100644
      int nread;
      nread = readbuf (desc, buf, SARMAG);
 +#ifdef __MVS__
-+    __e2a_s(buf);
++    __e2a_s (buf);
 +#endif
      if (nread != SARMAG || memcmp (buf, ARMAG, SARMAG))
        goto invalid;
@@ -206,302 +57,35 @@ index 3ce21db..06d9965 100644
  #else   /* Not AIAMAG.  */
          nread = readbuf (desc, &member_header, AR_HDR_SIZE);
 +#ifdef __MVS__
-+        __e2a_l((char*)&member_header, sizeof(member_header));
++        __e2a_l ((char*) &member_header, sizeof (member_header));
 +#endif
          if (nread == 0)
            /* No data left means end of file; that is OK.  */
            break;
 diff --git a/src/job.c b/src/job.c
-index ae1f18b..844d85e 100644
+index ae1f18b..1a0088d 100644
 --- a/src/job.c
 +++ b/src/job.c
-@@ -26,6 +26,93 @@ this program.  If not, see <http://www.gnu.org/licenses/>.  */
- #include "variable.h"
- #include "os.h"
- 
-+#ifdef __MVS__
-+int execvpe(const char* name,
-+                       char* const argv[],
-+                       char* const envp[]) {
-+  int lp, ln;
-+  const char* p;
-+
-+  int eacces = 0, etxtbsy = 0;
-+  char *bp, *cur, *path, *buf = 0;
-+
-+  // Absolute or Relative Path Name
-+  if (strchr(name, '/')) {
-+    return execve(name, argv, envp);
-+  }
-+
-+  // Get the path we're searching
-+  if (!(path = getenv("PATH"))) {
-+    if ((cur = path = (char*)alloca(2)) != NULL) {
-+      path[0] = ':';
-+      path[1] = '\0';
-+    }
-+  } else {
-+    char* n = (char*)alloca(strlen(path) + 1);
-+    strcpy(n, path);
-+    cur = path = n;
-+  }
-+
-+  if (path == NULL ||
-+      (bp = buf = (char*)alloca(strlen(path) + strlen(name) + 2)) == NULL)
-+    goto done;
-+
-+  while (cur != NULL) {
-+    p = cur;
-+    if ((cur = strchr(cur, ':')) != NULL) *cur++ = '\0';
-+
-+    if (!*p) {
-+      p = ".";
-+      lp = 1;
-+    } else
-+      lp = strlen(p);
-+    ln = strlen(name);
-+
-+    memcpy(buf, p, lp);
-+    buf[lp] = '/';
-+    memcpy(buf + lp + 1, name, ln);
-+    buf[lp + ln + 1] = '\0';
-+
-+  retry:
-+    (void)execve(bp, argv, envp);
-+    switch (errno) {
-+      case EACCES:
-+        eacces = 1;
-+        break;
-+      case ENOTDIR:
-+      case ENOENT:
-+        break;
-+      case ENOEXEC: {
-+        size_t cnt;
-+        char** ap;
-+
-+        for (cnt = 0, ap = (char**)argv; *ap; ++ap, ++cnt)
-+          ;
-+        if ((ap = (char**)alloca((cnt + 2) * sizeof(char*))) != NULL) {
-+          memcpy(ap + 2, argv + 1, cnt * sizeof(char*));
-+
-+          ap[0] = (char*)"sh";
-+          ap[1] = bp;
-+          (void)execve("/bin/sh", ap, envp);
-+        }
-+        goto done;
-+      }
-+      case ETXTBSY:
-+        if (etxtbsy < 3) (void)sleep(++etxtbsy);
-+        goto retry;
-+      default:
-+        goto done;
-+    }
-+  }
-+  if (eacces)
-+    errno = EACCES;
-+  else if (!errno)
-+    errno = ENOENT;
-+done:
-+  return (-1);
-+}
-+#endif
-+
- /* Default shell to use.  */
- #ifdef WINDOWS32
- # ifdef HAVE_STRINGS_H
-@@ -2297,8 +2384,14 @@ child_execute_job (struct childbase *child, int good_stdin, char **argv)
- #if !defined(USE_POSIX_SPAWN)
+@@ -2298,7 +2298,14 @@ child_execute_job (struct childbase *child, int good_stdin, char **argv)
  
    pid = vfork();
--  if (pid != 0)
-+  if (pid != 0) {
+   if (pid != 0)
++    {
 +#ifdef __MVS__
-+    __set_autocvt_on_untagged_fd_stream(fdin, 1047, 1);
-+    __set_autocvt_on_untagged_fd_stream(fdout, 1047, 1);
-+    __set_autocvt_on_untagged_fd_stream(fderr, 1047, 1);
++      zos_set_autocvt_on_untagged_fd_stream (fdin, 1047, 1);
++      zos_set_autocvt_on_untagged_fd_stream (fdout, 1047, 1);
++      zos_set_autocvt_on_untagged_fd_stream (fderr, 1047, 1);
 +#endif
      return pid;
-+  }
++    }
  
    /* We are the child.  */
    unblock_all_sigs ();
-@@ -2544,6 +2637,10 @@ exec_command (char **argv, char **envp)
-   /* the file might have a strange shell extension */
-   if (errno == ENOENT)
-     errno = ENOEXEC;
-+#elif __MVS__
-+
-+  environ = envp;
-+  execvpe (argv[0], argv, envp);
- 
- # else
-   /* Run the program.  */
-@@ -2610,6 +2707,9 @@ exec_command (char **argv, char **envp)
-         pid = spawnvpe (P_NOWAIT, shell, new_argv, envp);
-         if (pid >= 0)
-           break;
-+# elif __MVS__
-+        environ = envp;
-+        execvpe (shell, new_argv, envp);
- # else
-         execvp (shell, new_argv);
- # endif
 diff --git a/src/main.c b/src/main.c
-index 78a27d7..2816f59 100644
+index 78a27d7..44e65f4 100644
 --- a/src/main.c
 +++ b/src/main.c
-@@ -1046,14 +1046,172 @@ reset_jobserver (void)
-   jobserver_auth = NULL;
- }
- 
-+#ifdef __MVS__
-+#include <string.h>
-+#include <sys/stat.h>
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <sys/ps.h>
-+#include <unistd.h>
-+#include <stdarg.h>
-+#include <varargs.h>
-+#include <limits.h>
-+#include <_Nascii.h>
-+#include <fcntl.h>
-+#include <libgen.h>
-+
-+int __setccsid(int fd, int ccsid) 
-+{
-+  attrib_t attr;
-+  int rc;
-+
-+  memset(&attr, 0, sizeof(attr));
-+  attr.att_filetagchg = 1;
-+  attr.att_filetag.ft_ccsid = ccsid;
-+  attr.att_filetag.ft_txtflag = 1;
-+
-+  rc = __fchattr(fd, &attr, sizeof(attr));
-+  return rc;
-+}
-+
-+void __updateccsid(int fd, const char* path, int oflag, int perm) 
-+{ 
-+  int rc;
-+  if (oflag & O_CREAT) {
-+    rc = __setccsid(fd, 819);
-+  }
-+}
-+
-+int __pipe(int [2]);
-+#pragma map(__pipe, "pipe")
-+int __open(const char *filename, int opts, ...);
-+#pragma map(__open, "@@A00144")
-+
-+int __open_ascii(const char *filename, int opts, ...) {
-+  va_list ap;
-+  va_start(ap, opts);
-+  int perms = va_arg(ap, int);
-+  struct stat sb;
-+  int is_new_file = stat(filename, &sb) != 0;
-+  int fd = __open(filename, opts, perms);
-+  // Tag new files as 819
-+  if (fd >= 0 && is_new_file)
-+    __chgfdccsid(fd, 819);
-+  va_end(ap);
-+  return fd;
-+}
-+
-+int __pipe_ascii(int fd[2]) {
-+  int ret = __pipe(fd);
-+
-+  // Default ccsid for new pipes should be 819
-+  __chgfdccsid(fd[0], 819);
-+  __chgfdccsid(fd[1], 819);
-+  return ret;
-+}
-+
-+int __getfdccsid(int fd) {
-+  struct stat st;
-+  int rc;
-+  rc = fstat(fd, &st);
-+  if (rc != 0)
-+    return -1;
-+  unsigned short ccsid = st.st_tag.ft_ccsid;
-+  if (st.st_tag.ft_txtflag) {
-+    return 65536 + ccsid;
-+  }
-+  return ccsid;
-+}
-+
-+int __chgfdccsid(int fd, unsigned short ccsid) 
-+{
-+  attrib_t attr;
-+  memset(&attr, 0, sizeof(attr));
-+  attr.att_filetagchg = 1;
-+  attr.att_filetag.ft_ccsid = ccsid;
-+  if (ccsid != FT_BINARY) {
-+    attr.att_filetag.ft_txtflag = 1;
-+  }
-+  return __fchattr(fd, &attr, sizeof(attr));
-+}
-+
-+void __set_autocvt_on_untagged_fd_stream(int fd, unsigned short ccsid, unsigned char txtflag) {
-+  struct file_tag tag;
-+
-+  tag.ft_ccsid = ccsid;
-+  tag.ft_txtflag = txtflag;
-+
-+  struct f_cnvrt req = {SETCVTON, 0, (short)ccsid};
-+
-+  if (!isatty(fd) && 0 == __getfdccsid(fd)) {
-+    fcntl(fd, F_CONTROL_CVT, &req);
-+    fcntl(fd, F_SETTAG, &tag);
-+  }
-+}
-+
-+int orig_mode;
-+int orig_cvstate;
-+
-+void __init()
-+{
-+    // With "_EDC_SIG_DFLT" set to '0', a process closing with SIGINT send output both to stderr and stdout. 
-+    // Setting "_EDC_SIG_DFLT" default action of the following signals is abnormal termination of the process with no message output: SIGALRM, SIGHUP, SIGINT, SIGPIPE, SIGPOLL, SIGPROF, SIGSYS, SIGTERM, SIGUSR1, SIGUSR2, and SIGVTALRM
-+    setenv("_EDC_SIG_DFLT", "1", 1);
-+
-+    // Setting _EDC_SUSV3 can be used to control the behavior of setenv() with respect to setting EINVAL when var_name is a null pointer, points to an empty string or points to a string containing an '=' character. By default, setenv() will not set EINVAL for these conditions. 
-+    // When _EDC_SUSV3 is set to 1, setenv() will set errno to EINVAL if one of these conditions is true. 
-+    setenv("_EDC_SUSV3", "1", 1);
-+
-+    // Sets the _TAG_REDIR state to txt
-+    setenv("_TAG_REDIR_ERR", "txt", 1);
-+    setenv("_TAG_REDIR_IN", "txt", 1);
-+    setenv("_TAG_REDIR_OUT", "txt", 1);
-+
-+    // Force to ASCII mode and AUTOCVT to ON
-+#if (__CHARSET_LIB == 1)
-+    orig_mode = __ae_thread_swapmode(__AE_ASCII_MODE);
-+#else
-+    orig_mode = __ae_thread_swapmode(__AE_EBCDIC_MODE);
-+#endif
-+    orig_cvstate = __ae_autoconvert_state(_CVTSTATE_QUERY);
-+    if (_CVTSTATE_OFF == orig_cvstate)
-+        __ae_autoconvert_state(_CVTSTATE_ON);
-+
-+    setenv("_BPXK_AUTOCVT", "ON", 1);
-+    char* cee_runopts_env = getenv("_CEE_RUNOPTS");
-+    char* appended_cee_runopts = "FILETAG(AUTOCVT,AUTOTAG) POSIX(ON)";
-+    char* new_cee_runopts = (char*)malloc(strlen(cee_runopts_env) + strlen(appended_cee_runopts) + 2);
-+    memset(new_cee_runopts, 0, strlen(cee_runopts_env) + strlen(appended_cee_runopts) + 2);
-+    if (cee_runopts_env)
-+    {
-+      strcpy(new_cee_runopts, cee_runopts_env);
-+      strcat(new_cee_runopts, " ");
-+    }
-+    strcat(new_cee_runopts, appended_cee_runopts);
-+    setenv("_CEE_RUNOPTS", new_cee_runopts, 1);
-+    free(new_cee_runopts);
-+}
-+#endif
-+
- #ifdef _AMIGA
+@@ -1050,10 +1050,21 @@ reset_jobserver (void)
  int
  main (int argc, char **argv)
  #else
@@ -517,52 +101,43 @@ index 78a27d7..2816f59 100644
  {
 +#ifdef __MVS__
 +  char** envp = environ;
-+  __init();
++  zos_init();
 +#endif
 +
    static char *stdin_nm = 0;
    int makefile_status = MAKE_SUCCESS;
    struct goaldep *read_files;
-@@ -1072,6 +1230,12 @@ main (int argc, char **argv, char **envp)
+@@ -1072,6 +1083,12 @@ main (int argc, char **argv, char **envp)
    no_default_sh_exe = 1;
  #endif
  
 +#ifdef __MVS__
-+  __set_autocvt_on_untagged_fd_stream(STDIN_FILENO, 1047, 1);
-+  __set_autocvt_on_untagged_fd_stream(STDOUT_FILENO, 1047, 1);
-+  __set_autocvt_on_untagged_fd_stream(STDERR_FILENO, 1047, 1);
++  zos_set_autocvt_on_untagged_fd_stream (STDIN_FILENO, 1047, 1);
++  zos_set_autocvt_on_untagged_fd_stream (STDOUT_FILENO, 1047, 1);
++  zos_set_autocvt_on_untagged_fd_stream (STDERR_FILENO, 1047, 1);
 +#endif
 +
    /* Useful for attaching debuggers, etc.  */
    SPIN ("main-entry");
  
-@@ -1815,6 +1979,7 @@ main (int argc, char **argv, char **envp)
- 
-             strcat (template, DEFAULT_TMPFILE);
-             outfile = get_tmpfile (&stdin_nm, template);
-+            
-             if (outfile == 0)
-               pfatal_with_name (_("fopen (temporary file)"));
-             while (!feof (stdin) && ! ferror (stdin))
 diff --git a/src/makeint.h b/src/makeint.h
-index c428a36..bf0529d 100644
+index c428a36..079dc8e 100644
 --- a/src/makeint.h
 +++ b/src/makeint.h
-@@ -26,6 +26,12 @@ this program.  If not, see <http://www.gnu.org/licenses/>.  */
+@@ -26,6 +26,11 @@ this program.  If not, see <http://www.gnu.org/licenses/>.  */
  
  #define _GNU_SOURCE 1
  
 +#ifdef __MVS__
-+#include "os390.h"
-+# include <fcntl.h>
-+# define pipe(_p)        __pipe_ascii(_p)
++/* Required to override C functions pipe, open */
++# include "os390.h"
 +#endif
 +
  /* AIX requires this to be the first thing in the file.  */
  #if HAVE_ALLOCA_H
  # include <alloca.h>
 diff --git a/src/misc.c b/src/misc.c
-index de19e37..439cf91 100644
+index de19e37..c720778 100644
 --- a/src/misc.c
 +++ b/src/misc.c
 @@ -508,7 +508,7 @@ get_tmpfile (char **name, const char *template)
@@ -579,15 +154,183 @@ index de19e37..439cf91 100644
    umask (mask);
  
 +#if defined(__MVS__)
-+  __chgfdccsid(fileno(file), 819);
++  zos_chgfdccsid (fileno (file), 819);
 +#endif
 +
    return file;
  }
  
+diff --git a/src/os390.c b/src/os390.c
+new file mode 100644
+index 0000000..3327874
+--- /dev/null
++++ b/src/os390.c
+@@ -0,0 +1,162 @@
++#ifdef __MVS__
++#include "config.h"
++
++#include <string.h>
++#include <sys/stat.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <sys/ps.h>
++#include <unistd.h>
++#include <stdarg.h>
++#include <varargs.h>
++#include <limits.h>
++#include <_Nascii.h>
++#include <fcntl.h>
++#include <libgen.h>
++
++int
++zos_setccsid (int fd, int ccsid)
++{
++  attrib_t attr;
++  int rc;
++
++  memset (&attr, 0, sizeof (attr));
++  attr.att_filetagchg = 1;
++  attr.att_filetag.ft_ccsid = ccsid;
++  attr.att_filetag.ft_txtflag = 1;
++
++  rc = zos_fchattr (fd, &attr, sizeof (attr));
++  return rc;
++}
++
++void
++zos_updateccsid (int fd, const char* path, int oflag, 
++                int perm)
++{
++  int rc;
++  if (oflag & O_CREAT)
++    rc = zos_setccsid (fd, 819);
++}
++
++int
++zos_pipe (int [2]);
++#pragma map(zos_pipe, "pipe")
++int
++zos_open (const char *filename, int opts, ...);
++#pragma map(zos_open, "@@A00144")
++
++int
++zos_open_ascii (const char *filename, int opts, ...)
++{
++  va_list ap;
++  va_start (ap, opts);
++  int perms = va_arg (ap, int);
++  struct stat sb;
++  int is_new_file = stat (filename, &sb) != 0;
++  int fd = zos_open (filename, opts, perms);
++  // Tag new files as 819
++  if (fd >= 0 && is_new_file)
++    zos_chgfdccsid (fd, 819);
++  va_end (ap);
++  return fd;
++}
++
++int
++zos_pipe_ascii(int fd[2])
++{
++  int ret = zos_pipe (fd);
++
++  // Default ccsid for new pipes should be 819
++  zos_chgfdccsid (fd[0], 819);
++  zos_chgfdccsid (fd[1], 819);
++  return ret;
++}
++
++int
++zos_getfdccsid(int fd)
++{
++  struct stat st;
++  int rc;
++  rc = fstat (fd, &st);
++  if (rc != 0)
++    return -1;
++  unsigned short ccsid = st.st_tag.ft_ccsid;
++  if (st.st_tag.ft_txtflag)
++    return 65536 + ccsid;
++  return ccsid;
++}
++
++int
++zos_chgfdccsid(int fd, unsigned short ccsid)
++{
++  attrib_t attr;
++  memset(&attr, 0, sizeof(attr));
++  attr.att_filetagchg = 1;
++  attr.att_filetag.ft_ccsid = ccsid;
++  if (ccsid != FT_BINARY)
++    attr.att_filetag.ft_txtflag = 1;
++  return zos_fchattr (fd, &attr, sizeof(attr));
++}
++
++void
++zos_set_autocvt_on_untagged_fd_stream (int fd, unsigned short ccsid, 
++                                       unsigned char txtflag)
++{
++  struct file_tag tag;
++
++  tag.ft_ccsid = ccsid;
++  tag.ft_txtflag = txtflag;
++
++  struct f_cnvrt req = {SETCVTON, 0, (short)ccsid};
++
++  if (!isatty (fd) && 0 == zos_getfdccsid (fd))
++    {
++      fcntl (fd, F_CONTROL_CVT, &req);
++      fcntl (fd, F_SETTAG, &tag);
++    }
++}
++
++int orig_mode;
++int orig_cvstate;
++
++void 
++zos_init ()
++{
++    // With "_EDC_SIG_DFLT" set to '0', a process closing with SIGINT send output both to stderr and stdout. 
++    // Setting "_EDC_SIG_DFLT" default action of the following signals is abnormal termination of the process with no message output: SIGALRM, SIGHUP, SIGINT, SIGPIPE, SIGPOLL, SIGPROF, SIGSYS, SIGTERM, SIGUSR1, SIGUSR2, and SIGVTALRM
++    setenv ("_EDC_SIG_DFLT", "1", 1);
++
++    // Setting _EDC_SUSV3 can be used to control the behavior of setenv() with respect to setting EINVAL when var_name is a null pointer, points to an empty string or points to a string containing an '=' character. By default, setenv() will not set EINVAL for these conditions. 
++    // When _EDC_SUSV3 is set to 1, setenv() will set errno to EINVAL if one of these conditions is true. 
++    setenv ("_EDC_SUSV3", "1", 1);
++
++    // Sets the _TAG_REDIR state to txt
++    setenv ("_TAG_REDIR_ERR", "txt", 1);
++    setenv ("_TAG_REDIR_IN", "txt", 1);
++    setenv ("_TAG_REDIR_OUT", "txt", 1);
++
++    // Force to ASCII mode and AUTOCVT to ON
++#if (zos_CHARSET_LIB == 1)
++    orig_mode = zos_ae_thread_swapmode (__AE_ASCII_MODE);
++#else
++    orig_mode = zos_ae_thread_swapmode (__AE_EBCDIC_MODE);
++#endif
++    orig_cvstate = zos_ae_autoconvert_state (_CVTSTATE_QUERY);
++    if (_CVTSTATE_OFF == orig_cvstate)
++      zos_ae_autoconvert_state (_CVTSTATE_ON);
++
++    setenv ("_BPXK_AUTOCVT", "ON", 1);
++    char* cee_runopts_env = getenv ("_CEE_RUNOPTS");
++    char* appended_cee_runopts = "FILETAG(AUTOCVT,AUTOTAG) POSIX(ON)";
++    char* new_cee_runopts = (char*)malloc (strlen (cee_runopts_env) + strlen (appended_cee_runopts) + 2);
++    memset (new_cee_runopts, 0, strlen (cee_runopts_env) + strlen (appended_cee_runopts) + 2);
++    if (cee_runopts_env)
++      {
++        strcpy(new_cee_runopts, cee_runopts_env);
++        strcat (new_cee_runopts, " ");
++      }
++    strcat (new_cee_runopts, appended_cee_runopts);
++    setenv ("_CEE_RUNOPTS", new_cee_runopts, 1);
++    free (new_cee_runopts);
++}
++#endif
 diff --git a/src/os390.h b/src/os390.h
 new file mode 100644
-index 0000000..c18f764
+index 0000000..28eb0a3
 --- /dev/null
 +++ b/src/os390.h
 @@ -0,0 +1,34 @@
@@ -604,11 +347,11 @@ index 0000000..c18f764
 +#undef pipe
 +#undef open
 +
-+int __open_ascii(const char *filename, int opts, ...);
-+int __pipe_ascii(int [2]);
++int zos_open_ascii(const char *filename, int opts, ...);
++int zos_pipe_ascii(int [2]);
 +
-+int open(const char* path, int oflag, ...) asm("__open_ascii");
-+int pipe(int [2]) asm("__open_ascii");
++int open(const char* path, int oflag, ...) asm("zos_open_ascii");
++int pipe(int [2]) asm("zos_open_ascii");
 +#endif
 +
 +#include <string.h>
@@ -619,41 +362,60 @@ index 0000000..c18f764
 +#include <fcntl.h>
 +#include <libgen.h>
 +
-+int __getfdccsid(int fd);
-+int __setccsid(int fd, int ccsid);
-+int __chgfdccsid(int fd, unsigned short ccsid);
-+void __updateccsid(int fd, const char* path, int oflag, int perm);
++int zos_getfdccsid(int fd);
++int zos_setccsid(int fd, int ccsid);
++int zos_chgfdccsid(int fd, unsigned short ccsid);
++void zos_updateccsid(int fd, const char* path, int oflag, int perm);
 +
 +#endif
 diff --git a/src/output.c b/src/output.c
-index 2211749..e2b6bc7 100644
+index 2211749..b7d5424 100644
 --- a/src/output.c
 +++ b/src/output.c
-@@ -364,7 +364,10 @@ output_dump (struct output *out)
-       /* Try to acquire the semaphore.  If it fails, dump the output
-          unsynchronized; still better than silently discarding it.
-          We want to keep this lock for as little time as possible.  */
-+#ifndef __MVS__
-+      //TODO: Implement alternative
-       void *sem = acquire_semaphore ();
+@@ -250,6 +250,7 @@ pump_from_tmp (int from, FILE *to)
+ #endif
+ }
+ 
++#ifdef __MVS__
+ /* Obtain the lock for writing output.  */
+ static void *
+ acquire_semaphore (void)
+@@ -275,6 +276,33 @@ release_semaphore (void *sem)
+   if (fcntl (sync_handle, F_SETLKW, flp) == -1)
+     perror ("fcntl()");
+ }
++#else
++/* Obtain the lock for writing output.  */
++static void *
++acquire_semaphore (void)
++{
++  static struct flock fl;
++
++  fl.l_type = F_WRLCK;
++  fl.l_whence = SEEK_SET;
++  fl.l_start = 0;
++  fl.l_len = 1;
++  if (fcntl (sync_handle, F_SETLKW, &fl) != -1)
++    return &fl;
++  perror ("fcntl()");
++  return NULL;
++}
++
++/* Release the lock for writing output.  */
++static void
++release_semaphore (void *sem)
++{
++  struct flock *flp = (struct flock *)sem;
++  flp->l_type = F_UNLCK;
++  if (fcntl (sync_handle, F_SETLKW, flp) == -1)
++    perror ("fcntl()");
++}
 +#endif
  
-       /* Log the working directory for this dump.  */
-       if (print_directory_flag && output_sync != OUTPUT_SYNC_RECURSE)
-@@ -379,8 +382,11 @@ output_dump (struct output *out)
-         log_working_directory (0);
- 
-       /* Exit the critical section.  */
-+#ifndef __MVS__
-+      //TODO: Implement alternative
-       if (sem)
-         release_semaphore (sem);
-+#endif
- 
-       /* Truncate and reset the output, in case we use it again.  */
-       if (out->out != OUTPUT_NONE)
+ /* Returns a file descriptor to a temporary file.  The file is automatically
+    closed/deleted on exit.  Don't use a FILE* stream.  */
 diff --git a/src/posixos.c b/src/posixos.c
-index 525f292..ee6e14d 100644
+index 525f292..73e480d 100644
 --- a/src/posixos.c
 +++ b/src/posixos.c
 @@ -37,7 +37,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.  */
@@ -661,7 +423,7 @@ index 525f292..ee6e14d 100644
  
  /* These track the state of the jobserver pipe.  Passed to child instances.  */
 -static int job_fds[2] = { -1, -1 };
-+static int job_fds[2] = {};
++static int job_fds[2] = {-1, -1};
  
  /* Used to signal read() that a SIGCHLD happened.  Always CLOEXEC.
     If we use pselect() this will never be created and always -1.
