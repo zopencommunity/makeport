@@ -5,7 +5,7 @@
 export ZOPEN_TYPE="TARBALL"
 
 export ZOPEN_TARBALL_URL="https://ftp.gnu.org/gnu/make/make-4.3.tar.gz"
-export ZOPEN_TARBALL_DEPS="curl gzip m4 perl" 
+export ZOPEN_TARBALL_DEPS="curl gzip m4 perl make" 
 
 export ZOPEN_GIT_URL="https://git.savannah.gnu.org/git/make.git"
 export ZOPEN_GIT_DEPS="git make m4 perl autoconf automake help2man makeinfo xz"
@@ -20,20 +20,21 @@ fi
 
 export ZOPEN_MAKE="./build.sh"
 export ZOPEN_CHECK="${ZOPEN_ROOT}/makecheck.sh"
+export ZOPEN_EXTRA_CFLAGS="-O3"
 
 zopen_check_results()
 {
-#!/bin/sh
-# make should have 10 failures or less
-#
 chk="$2_check.log"
 
-set -x
-failures=$(grep ".* Tests in .* Categories Failed" ${chk} | cut -f1 -d' ')
+if grep "No Failures :-)" ${chk}; then
+  return 0
+fi
+
+failures=$(grep ".* Test.*in .* Categories Failed" ${chk} | cut -f1 -d' ')
 if [ ${failures} -gt 10 ]; then
-  exit 2
+  return 2
 else
-  exit 1
+  return 1
 fi
 }
 

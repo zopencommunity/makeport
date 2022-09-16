@@ -1,34 +1,169 @@
 diff --git a/Makefile.am b/Makefile.am
-index 8cc39c9..ff8989e 100644
+index 8cc39c9..3e85a56 100644
 --- a/Makefile.am
 +++ b/Makefile.am
-@@ -56,8 +56,10 @@ alloca_SRCS =	lib/alloca.c
+@@ -56,6 +56,8 @@ alloca_SRCS =	lib/alloca.c
  
  loadavg_SRCS =	lib/getloadavg.c
  
 +zos_SRCS =	src/os390.c
 +
  make_SOURCES =	$(make_SRCS)
+ EXTRA_make_SOURCES = $(amiga_SRCS) $(vms_SRCS)
+ 
+@@ -77,6 +79,11 @@ else
+   make_SOURCES += src/posixos.c
+ endif
+ 
++OSTYPE := $(shell uname -s | tr '[:upper:]' '[:lower:]')
++ifeq ($(findstring os/390,$OSTYPE),os/390)
++  make_SOURCES += $(zos_SRCS)
++endif
++
+ if USE_CUSTOMS
+   make_SOURCES += src/remote-cstms.c
+ else
+diff --git a/Makefile.in b/Makefile.in
+index 9535058..d798672 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -188,7 +188,7 @@ am__objects_1 = src/ar.$(OBJEXT) src/arscan.$(OBJEXT) \
+ 	src/misc.$(OBJEXT) src/output.$(OBJEXT) src/read.$(OBJEXT) \
+ 	src/remake.$(OBJEXT) src/rule.$(OBJEXT) src/signame.$(OBJEXT) \
+ 	src/strcache.$(OBJEXT) src/variable.$(OBJEXT) \
+-	src/version.$(OBJEXT) src/vpath.$(OBJEXT)
++	src/version.$(OBJEXT) src/vpath.$(OBJEXT) src/os390.$(OBJEXT)
+ am__objects_2 = src/w32/pathstuff.$(OBJEXT) src/w32/w32os.$(OBJEXT) \
+ 	src/w32/compat/dirent.$(OBJEXT) \
+ 	src/w32/compat/posixfcn.$(OBJEXT) \
+@@ -236,6 +236,7 @@ am__depfiles_remade = src/$(DEPDIR)/amiga.Po src/$(DEPDIR)/ar.Po \
+ 	src/$(DEPDIR)/signame.Po src/$(DEPDIR)/strcache.Po \
+ 	src/$(DEPDIR)/variable.Po src/$(DEPDIR)/version.Po \
+ 	src/$(DEPDIR)/vms_exit.Po src/$(DEPDIR)/vms_export_symbol.Po \
++	src/$(DEPDIR)/os390.Po \
+ 	src/$(DEPDIR)/vms_progname.Po src/$(DEPDIR)/vmsfunctions.Po \
+ 	src/$(DEPDIR)/vmsify.Po src/$(DEPDIR)/vpath.Po \
+ 	src/w32/$(DEPDIR)/pathstuff.Po src/w32/$(DEPDIR)/w32os.Po \
+@@ -1035,9 +1036,10 @@ amiga_SRCS = src/amiga.c src/amiga.h
+ glob_SRCS = lib/fnmatch.c lib/fnmatch.h lib/glob.c lib/glob.h
+ alloca_SRCS = lib/alloca.c
+ loadavg_SRCS = lib/getloadavg.c
++zos_SRCS =	src/os390.c
+ make_SOURCES = $(make_SRCS) $(am__append_1) $(am__append_3) \
+ 	$(am__append_4) $(am__append_5)
 -EXTRA_make_SOURCES = $(amiga_SRCS) $(vms_SRCS)
 +EXTRA_make_SOURCES = $(amiga_SRCS) $(vms_SRCS) $(zos_SRCS)
- 
- make_LDADD =	$(LIBOBJS) $(GUILE_LIBS) lib/libgnu.a $(GETLOADAVG_LIBS) \
+ make_LDADD = $(LIBOBJS) $(GUILE_LIBS) lib/libgnu.a $(GETLOADAVG_LIBS) \
  		@LIBINTL@
+ 
+@@ -1276,6 +1278,7 @@ src/remote-cstms.$(OBJEXT): src/$(am__dirstamp) \
+ 	src/$(DEPDIR)/$(am__dirstamp)
+ src/remote-stub.$(OBJEXT): src/$(am__dirstamp) \
+ 	src/$(DEPDIR)/$(am__dirstamp)
++src/os390.$(OBJEXT): src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+ src/amiga.$(OBJEXT): src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+ src/vms_exit.$(OBJEXT): src/$(am__dirstamp) \
+ 	src/$(DEPDIR)/$(am__dirstamp)
+@@ -1338,6 +1341,7 @@ distclean-compile:
+ @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/vmsfunctions.Po@am__quote@ # am--include-marker
+ @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/vmsify.Po@am__quote@ # am--include-marker
+ @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/vpath.Po@am__quote@ # am--include-marker
++@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/os390.Po@am__quote@ # am--include-marker
+ @AMDEP_TRUE@@am__include@ @am__quote@src/w32/$(DEPDIR)/pathstuff.Po@am__quote@ # am--include-marker
+ @AMDEP_TRUE@@am__include@ @am__quote@src/w32/$(DEPDIR)/w32os.Po@am__quote@ # am--include-marker
+ @AMDEP_TRUE@@am__include@ @am__quote@src/w32/compat/$(DEPDIR)/dirent.Po@am__quote@ # am--include-marker
+@@ -1814,6 +1818,7 @@ distclean: distclean-recursive
+ 	-rm -f src/$(DEPDIR)/strcache.Po
+ 	-rm -f src/$(DEPDIR)/variable.Po
+ 	-rm -f src/$(DEPDIR)/version.Po
++	-rm -f src/$(DEPDIR)/os390.Po
+ 	-rm -f src/$(DEPDIR)/vms_exit.Po
+ 	-rm -f src/$(DEPDIR)/vms_export_symbol.Po
+ 	-rm -f src/$(DEPDIR)/vms_progname.Po
+@@ -1904,6 +1909,7 @@ maintainer-clean: maintainer-clean-recursive
+ 	-rm -f src/$(DEPDIR)/strcache.Po
+ 	-rm -f src/$(DEPDIR)/variable.Po
+ 	-rm -f src/$(DEPDIR)/version.Po
++	-rm -f src/$(DEPDIR)/os390.Po
+ 	-rm -f src/$(DEPDIR)/vms_exit.Po
+ 	-rm -f src/$(DEPDIR)/vms_export_symbol.Po
+ 	-rm -f src/$(DEPDIR)/vms_progname.Po
 diff --git a/build.sh b/build.sh
-index 4c88b53..5a19fb3 100755
+index 4c88b53..af584d1 100755
 --- a/build.sh
 +++ b/build.sh
-@@ -143,7 +143,9 @@ compile $OBJS
+@@ -143,7 +143,7 @@ compile $OBJS
  
  # Link all the objects together.
  echo "linking make..."
 -$CC $CFLAGS $LDFLAGS -L"$OUTLIB" $objs -lgnu $LOADLIBES -o "$OUTDIR/makenew$EXEEXT"
-+set -x
 +$CC $CFLAGS $LDFLAGS -L"$OUTLIB" -o "$OUTDIR/makenew$EXEEXT" $objs -lgnu $LOADLIBES
-+set +x
  mv -f "$OUTDIR/makenew$EXEEXT" "$OUTDIR/make$EXEEXT"
  
  echo done.
+diff --git a/lib/fnmatch.c b/lib/fnmatch.c
+index 4da8c5f..6faa5d7 100644
+--- a/lib/fnmatch.c
++++ b/lib/fnmatch.c
+@@ -27,7 +27,11 @@ USA.  */
+ #endif
+ 
+ #include <errno.h>
++#ifndef __MVS__
+ #include <fnmatch.h>
++#else
++#include "fnmatch.h"
++#endif
+ #include <ctype.h>
+ 
+ #if HAVE_STRING_H || defined _LIBC
+diff --git a/lib/glob.c b/lib/glob.c
+index adad16f..ddc7c39 100644
+--- a/lib/glob.c
++++ b/lib/glob.c
+@@ -214,17 +214,21 @@ my_realloc (p, n)
+ #  undef alloca
+ #  define alloca(n)	__builtin_alloca (n)
+ # else	/* Not GCC.  */
+-#  ifdef HAVE_ALLOCA_H
+-#   include <alloca.h>
+-#  else	/* Not HAVE_ALLOCA_H.  */
+-#   ifndef _AIX
+-#    ifdef WINDOWS32
+-#     include <malloc.h>
+-#    else
++#  ifdef __MVS__
++#   include <stdlib.h>
++#  else
++#   ifdef HAVE_ALLOCA_H
++#    include <alloca.h>
++#   else /* Not HAVE_ALLOCA_H.  */
++#    ifndef _AIX
++#     ifdef WINDOWS32
++#      include <malloc.h>
++#     else
+ extern char *alloca ();
+-#    endif /* WINDOWS32 */
+-#   endif /* Not _AIX.  */
+-#  endif /* sparc or HAVE_ALLOCA_H.  */
++#     endif /* WINDOWS32 */
++#    endif /* Not _AIX.  */
++#   endif /* sparc or HAVE_ALLOCA_H.  */
++#  endif /* Not z/OS */
+ # endif	/* GCC.  */
+ #endif
+ 
+@@ -281,7 +285,9 @@ extern char *alloca ();
+ #include <glob.h>
+ 
+ #if !defined __alloca
+-# define __alloca alloca
++# ifndef __MVS__
++#  define __alloca alloca
++# endif
+ #endif
+ 
+ #if !defined __stat
 diff --git a/src/arscan.c b/src/arscan.c
 index 3ce21db..2a3e1f2 100644
 --- a/src/arscan.c
@@ -62,27 +197,67 @@ index 3ce21db..2a3e1f2 100644
          if (nread == 0)
            /* No data left means end of file; that is OK.  */
            break;
+diff --git a/src/config.h.in b/src/config.h.in
+index 4757a50..9ebcfb9 100644
+--- a/src/config.h.in
++++ b/src/config.h.in
+@@ -1127,6 +1127,12 @@
+ # define _GL_ATTRIBUTE_MALLOC /* empty */
+ #endif
+ 
++#ifdef __MVS__
++/* fcntl does not support stdio file descriptors */
++#define NO_OUTPUT_SYNC
++/* Required to override C functions pipe, open */
++# include "os390.h"
++#endif
+ 
+ /* Define as `fork' if `vfork' does not work. */
+ #undef vfork
+diff --git a/src/getopt.c b/src/getopt.c
+index 35e71ef..53fee49 100644
+--- a/src/getopt.c
++++ b/src/getopt.c
+@@ -22,9 +22,11 @@ this program.  If not, see <http://www.gnu.org/licenses/>.  */
+ 
+ /* This tells Alpha OSF/1 not to define a getopt prototype in <stdio.h>.
+    Ditto for AIX 3.2 and <stdlib.h>.  */
++#ifndef __MVS__
+ #ifndef _NO_PROTO
+ # define _NO_PROTO
+ #endif
++#endif
+ 
+ #ifdef HAVE_CONFIG_H
+ # include <config.h>
 diff --git a/src/job.c b/src/job.c
-index ae1f18b..1a0088d 100644
+index ae1f18b..354ea17 100644
 --- a/src/job.c
 +++ b/src/job.c
-@@ -2298,7 +2298,14 @@ child_execute_job (struct childbase *child, int good_stdin, char **argv)
- 
-   pid = vfork();
-   if (pid != 0)
-+    {
-+#ifdef __MVS__
-+      zos_set_autocvt_on_untagged_fd_stream (fdin, 1047, 1);
-+      zos_set_autocvt_on_untagged_fd_stream (fdout, 1047, 1);
-+      zos_set_autocvt_on_untagged_fd_stream (fderr, 1047, 1);
-+#endif
-     return pid;
-+    }
- 
-   /* We are the child.  */
-   unblock_all_sigs ();
+@@ -2544,7 +2544,10 @@ exec_command (char **argv, char **envp)
+   /* the file might have a strange shell extension */
+   if (errno == ENOENT)
+     errno = ENOEXEC;
+-
++# elif __MVS__
++  // In USS we can't set environ variable in ASCII mode
++  environ = envp;
++  execvpe(argv[0], argv, envp);
+ # else
+   /* Run the program.  */
+   environ = envp;
+@@ -2610,6 +2613,9 @@ exec_command (char **argv, char **envp)
+         pid = spawnvpe (P_NOWAIT, shell, new_argv, envp);
+         if (pid >= 0)
+           break;
++# elif __MVS__
++        // In USS we can't set environ variable in ASCII mode
++        execvpe(shell, new_argv, envp);
+ # else
+         execvp (shell, new_argv);
+ # endif
 diff --git a/src/main.c b/src/main.c
-index 78a27d7..44e65f4 100644
+index 78a27d7..fd0f263 100644
 --- a/src/main.c
 +++ b/src/main.c
 @@ -1050,10 +1050,21 @@ reset_jobserver (void)
@@ -100,8 +275,8 @@ index 78a27d7..44e65f4 100644
 +#endif
  {
 +#ifdef __MVS__
-+  char** envp = environ;
-+  zos_init();
++  char **envp = environ;
++  zos_init ();
 +#endif
 +
    static char *stdin_nm = 0;
@@ -120,24 +295,19 @@ index 78a27d7..44e65f4 100644
    /* Useful for attaching debuggers, etc.  */
    SPIN ("main-entry");
  
-diff --git a/src/makeint.h b/src/makeint.h
-index c428a36..079dc8e 100644
---- a/src/makeint.h
-+++ b/src/makeint.h
-@@ -26,6 +26,11 @@ this program.  If not, see <http://www.gnu.org/licenses/>.  */
+@@ -1867,8 +1884,8 @@ main (int argc, char **argv, char **envp)
+ # endif
+   }
  
- #define _GNU_SOURCE 1
- 
-+#ifdef __MVS__
-+/* Required to override C functions pipe, open */
-+# include "os390.h"
-+#endif
-+
- /* AIX requires this to be the first thing in the file.  */
- #if HAVE_ALLOCA_H
- # include <alloca.h>
+-#ifdef HAVE_PSELECT
+-  /* If we have pselect() then we need to block SIGCHLD so it's deferred.  */
++#if defined(HAVE_PSELECT) && !defined(__MVS__)
++  /* If we have pselect() then we need to block SIGCHLD so it's deferred, but not on z/OS  */
+   {
+     sigset_t block;
+     sigemptyset (&block);
 diff --git a/src/misc.c b/src/misc.c
-index de19e37..c720778 100644
+index de19e37..0a4c913 100644
 --- a/src/misc.c
 +++ b/src/misc.c
 @@ -508,7 +508,7 @@ get_tmpfile (char **name, const char *template)
@@ -145,7 +315,7 @@ index de19e37..c720778 100644
  # endif
  
 -# ifdef HAVE_FDOPEN
-+# if defined(HAVE_FDOPEN)
++#ifdef HAVE_FDOPEN
    /* Can't use mkstemp(), but guard against a race condition.  */
    EINTRLOOP (fd, open (*name, O_CREAT|O_EXCL|O_WRONLY, 0600));
    if (fd == -1)
@@ -154,7 +324,7 @@ index de19e37..c720778 100644
    umask (mask);
  
 +#if defined(__MVS__)
-+  zos_chgfdccsid (fileno (file), 819);
++  zos_chgfdccsid(fileno(file), 819);
 +#endif
 +
    return file;
@@ -162,14 +332,15 @@ index de19e37..c720778 100644
  
 diff --git a/src/os390.c b/src/os390.c
 new file mode 100644
-index 0000000..3327874
+index 0000000..83a66c8
 --- /dev/null
 +++ b/src/os390.c
-@@ -0,0 +1,162 @@
+@@ -0,0 +1,243 @@
 +#ifdef __MVS__
 +#include "config.h"
 +
 +#include <string.h>
++#include <errno.h>
 +#include <sys/stat.h>
 +#include <stdio.h>
 +#include <stdlib.h>
@@ -183,6 +354,18 @@ index 0000000..3327874
 +#include <libgen.h>
 +
 +int
++zos_chgfdccsid(int fd, unsigned short ccsid)
++{
++  attrib_t attr;
++  memset(&attr, 0, sizeof(attr));
++  attr.att_filetagchg = 1;
++  attr.att_filetag.ft_ccsid = ccsid;
++  if (ccsid != FT_BINARY)
++    attr.att_filetag.ft_txtflag = 1;
++  return __fchattr (fd, &attr, sizeof(attr));
++}
++
++int
 +zos_setccsid (int fd, int ccsid)
 +{
 +  attrib_t attr;
@@ -193,7 +376,7 @@ index 0000000..3327874
 +  attr.att_filetag.ft_ccsid = ccsid;
 +  attr.att_filetag.ft_txtflag = 1;
 +
-+  rc = zos_fchattr (fd, &attr, sizeof (attr));
++  rc = __fchattr (fd, &attr, sizeof (attr));
 +  return rc;
 +}
 +
@@ -230,7 +413,7 @@ index 0000000..3327874
 +}
 +
 +int
-+zos_pipe_ascii(int fd[2])
++zos_pipe_ascii (int fd[2])
 +{
 +  int ret = zos_pipe (fd);
 +
@@ -241,7 +424,7 @@ index 0000000..3327874
 +}
 +
 +int
-+zos_getfdccsid(int fd)
++zos_getfdccsid (int fd)
 +{
 +  struct stat st;
 +  int rc;
@@ -252,18 +435,6 @@ index 0000000..3327874
 +  if (st.st_tag.ft_txtflag)
 +    return 65536 + ccsid;
 +  return ccsid;
-+}
-+
-+int
-+zos_chgfdccsid(int fd, unsigned short ccsid)
-+{
-+  attrib_t attr;
-+  memset(&attr, 0, sizeof(attr));
-+  attr.att_filetagchg = 1;
-+  attr.att_filetag.ft_ccsid = ccsid;
-+  if (ccsid != FT_BINARY)
-+    attr.att_filetag.ft_txtflag = 1;
-+  return zos_fchattr (fd, &attr, sizeof(attr));
 +}
 +
 +void
@@ -282,6 +453,92 @@ index 0000000..3327874
 +      fcntl (fd, F_CONTROL_CVT, &req);
 +      fcntl (fd, F_SETTAG, &tag);
 +    }
++}
++
++int
++execvpe (const char* name,
++                       char* const argv[],
++                       char* const envp[]) {
++  int lp, ln;
++  const char* p;
++
++  int eacces = 0, etxtbsy = 0;
++  char *bp, *cur, *path, *buf = 0;
++
++  // Absolute or Relative Path Name
++  if (strchr (name, '/')) {
++    return execve (name, argv, envp);
++  }
++
++  // Get the path we're searching
++  if (!(path = getenv ("PATH"))) {
++    if ((cur = path = (char*)alloca (2)) != NULL) {
++      path[0] = ':';
++      path[1] = '\0';
++    }
++  } else {
++    char* n = (char*)alloca( strlen (path) + 1);
++    strcpy(n, path);
++    cur = path = n;
++  }
++
++  if (path == NULL ||
++      (bp = buf = (char*)alloca( strlen (path) + strlen (name) + 2)) == NULL)
++    goto done;
++
++  while (cur != NULL) {
++    p = cur;
++    if ((cur = strchr (cur, ':')) != NULL) *cur++ = '\0';
++
++    if (!*p) {
++      p = ".";
++      lp = 1;
++    } else
++      lp = strlen (p);
++    ln = strlen (name);
++
++    memcpy (buf, p, lp);
++    buf[lp] = '/';
++    memcpy (buf + lp + 1, name, ln);
++    buf[lp + ln + 1] = '\0';
++
++  retry:
++    (void)execve (bp, argv, envp);
++    switch (errno) {
++      case EACCES:
++        eacces = 1;
++        break;
++      case ENOTDIR:
++      case ENOENT:
++        break;
++      case ENOEXEC: {
++        size_t cnt;
++        char** ap;
++
++        for (cnt = 0, ap = (char**)argv; *ap; ++ap, ++cnt)
++          ;
++        if ((ap = (char**)alloca ((cnt + 2) * sizeof(char*))) != NULL) {
++          memcpy (ap + 2, argv + 1, cnt * sizeof(char*));
++
++          ap[0] = (char*)"sh";
++          ap[1] = bp;
++          (void)execve ("/bin/sh", ap, envp);
++        }
++        goto done;
++      }
++      case ETXTBSY:
++        if (etxtbsy < 3) (void)sleep(++etxtbsy);
++        goto retry;
++      default:
++        goto done;
++    }
++  }
++  if (eacces)
++    errno = EACCES;
++  else if (!errno)
++    errno = ENOENT;
++done:
++  return (-1);
 +}
 +
 +int orig_mode;
@@ -303,15 +560,9 @@ index 0000000..3327874
 +    setenv ("_TAG_REDIR_IN", "txt", 1);
 +    setenv ("_TAG_REDIR_OUT", "txt", 1);
 +
-+    // Force to ASCII mode and AUTOCVT to ON
-+#if (zos_CHARSET_LIB == 1)
-+    orig_mode = zos_ae_thread_swapmode (__AE_ASCII_MODE);
-+#else
-+    orig_mode = zos_ae_thread_swapmode (__AE_EBCDIC_MODE);
-+#endif
-+    orig_cvstate = zos_ae_autoconvert_state (_CVTSTATE_QUERY);
++    orig_cvstate = __ae_autoconvert_state (_CVTSTATE_QUERY);
 +    if (_CVTSTATE_OFF == orig_cvstate)
-+      zos_ae_autoconvert_state (_CVTSTATE_ON);
++      __ae_autoconvert_state (_CVTSTATE_ON);
 +
 +    setenv ("_BPXK_AUTOCVT", "ON", 1);
 +    char* cee_runopts_env = getenv ("_CEE_RUNOPTS");
@@ -320,7 +571,7 @@ index 0000000..3327874
 +    memset (new_cee_runopts, 0, strlen (cee_runopts_env) + strlen (appended_cee_runopts) + 2);
 +    if (cee_runopts_env)
 +      {
-+        strcpy(new_cee_runopts, cee_runopts_env);
++        strcpy (new_cee_runopts, cee_runopts_env);
 +        strcat (new_cee_runopts, " ");
 +      }
 +    strcat (new_cee_runopts, appended_cee_runopts);
@@ -330,10 +581,10 @@ index 0000000..3327874
 +#endif
 diff --git a/src/os390.h b/src/os390.h
 new file mode 100644
-index 0000000..28eb0a3
+index 0000000..9b57670
 --- /dev/null
 +++ b/src/os390.h
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,50 @@
 +#ifndef H_OS390
 +#define H_OS390 1
 +
@@ -347,11 +598,15 @@ index 0000000..28eb0a3
 +#undef pipe
 +#undef open
 +
-+int zos_open_ascii(const char *filename, int opts, ...);
-+int zos_pipe_ascii(int [2]);
++int
++zos_open_ascii (const char *filename, int opts, ...);
++int
++zos_pipe_ascii (int [2]);
 +
-+int open(const char* path, int oflag, ...) asm("zos_open_ascii");
-+int pipe(int [2]) asm("zos_open_ascii");
++int
++open( const char* path, int oflag, ...) asm("zos_open_ascii");
++int
++pipe (int [2]) asm("zos_pipe_ascii");
 +#endif
 +
 +#include <string.h>
@@ -362,63 +617,41 @@ index 0000000..28eb0a3
 +#include <fcntl.h>
 +#include <libgen.h>
 +
-+int zos_getfdccsid(int fd);
-+int zos_setccsid(int fd, int ccsid);
-+int zos_chgfdccsid(int fd, unsigned short ccsid);
-+void zos_updateccsid(int fd, const char* path, int oflag, int perm);
++int
++zos_getfdccsid (int fd);
++int
++zos_setccsid (int fd, int ccsid);
++int
++zos_chgfdccsid (int fd, unsigned short ccsid);
++void
++zos_updateccsid (int fd, const char* path, int oflag, int perm);
++void
++zos_set_autocvt_on_untagged_fd_stream (int fd, unsigned short ccsid, 
++                                       unsigned char txtflag);
 +
++int
++execvpe (const char* name,
++                       char* const argv[],
++                       char* const envp[]);
++void zos_init ();
 +#endif
-diff --git a/src/output.c b/src/output.c
-index 2211749..b7d5424 100644
---- a/src/output.c
-+++ b/src/output.c
-@@ -250,6 +250,7 @@ pump_from_tmp (int from, FILE *to)
- #endif
- }
- 
-+#ifdef __MVS__
- /* Obtain the lock for writing output.  */
- static void *
- acquire_semaphore (void)
-@@ -275,6 +276,33 @@ release_semaphore (void *sem)
-   if (fcntl (sync_handle, F_SETLKW, flp) == -1)
-     perror ("fcntl()");
- }
-+#else
-+/* Obtain the lock for writing output.  */
-+static void *
-+acquire_semaphore (void)
-+{
-+  static struct flock fl;
-+
-+  fl.l_type = F_WRLCK;
-+  fl.l_whence = SEEK_SET;
-+  fl.l_start = 0;
-+  fl.l_len = 1;
-+  if (fcntl (sync_handle, F_SETLKW, &fl) != -1)
-+    return &fl;
-+  perror ("fcntl()");
-+  return NULL;
-+}
-+
-+/* Release the lock for writing output.  */
-+static void
-+release_semaphore (void *sem)
-+{
-+  struct flock *flp = (struct flock *)sem;
-+  flp->l_type = F_UNLCK;
-+  if (fcntl (sync_handle, F_SETLKW, flp) == -1)
-+    perror ("fcntl()");
-+}
-+#endif
- 
- /* Returns a file descriptor to a temporary file.  The file is automatically
-    closed/deleted on exit.  Don't use a FILE* stream.  */
 diff --git a/src/posixos.c b/src/posixos.c
-index 525f292..73e480d 100644
+index 525f292..3d868ed 100644
 --- a/src/posixos.c
 +++ b/src/posixos.c
-@@ -37,7 +37,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.  */
+@@ -24,8 +24,9 @@ this program.  If not, see <http://www.gnu.org/licenses/>.  */
+ # include <sys/file.h>
+ #endif
+ 
+-#if defined(HAVE_PSELECT) && defined(HAVE_SYS_SELECT_H)
+-# include <sys/select.h>
++#ifdef __MVS__
++/* FIXME: HAVE_PSELECT path hangs on z/OS */
++#undef HAVE_PSELECT
+ #endif
+ 
+ #include "debug.h"
+@@ -37,7 +38,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.  */
  /* This section provides OS-specific functions to support the jobserver.  */
  
  /* These track the state of the jobserver pipe.  Passed to child instances.  */
@@ -427,11 +660,53 @@ index 525f292..73e480d 100644
  
  /* Used to signal read() that a SIGCHLD happened.  Always CLOEXEC.
     If we use pselect() this will never be created and always -1.
+diff --git a/tests/scripts/features/archives b/tests/scripts/features/archives
+index dcd38e5..3aa49f7 100644
+--- a/tests/scripts/features/archives
++++ b/tests/scripts/features/archives
+@@ -213,7 +213,8 @@ if ($osname eq 'VMS') {
+ # Check long names for archive members.
+ # See Savannah bug #54395
+ 
+-if ($osname ne 'VMS') {
++# z/OS AR does not like long names
++if ($osname ne 'VMS' && $osname ne "os390") {
+     my $pre = '1234567890123456';
+     my $lib = 'libxx.a';
+     my $cr = $created;
+diff --git a/tests/scripts/features/shell_assignment b/tests/scripts/features/shell_assignment
+index 686e4bd..6885e22 100644
+--- a/tests/scripts/features/shell_assignment
++++ b/tests/scripts/features/shell_assignment
+@@ -19,10 +19,14 @@ all: ; @echo "<$(demo1)> <$(demo2)> <$(demo3)> <$(demo4)> <${demo5}>"
+               '', "<  1   2 3 4  5     6   > <7 8  > <7 8  > < 2 3 > < 2 3  >\n");
+ 
+ # TEST 1: Handle '#' the same way as BSD make
++$hashOctal="\\043";
++if ($osname eq "os390") {
++  $hashOctal="\\173";
++}
+ 
+ run_make_test('
+ foo1!=echo bar#baz
+-hash != printf \'\043\'
++hash != printf \'' . $hashOctal . '\'
+ foo2!= echo "bar$(hash)baz"
+ 
+ all: ; @echo "<$(foo1)> <$(hash)> <$(foo2)>"
 diff --git a/tests/test_driver.pl b/tests/test_driver.pl
-index f18e785..46544a5 100644
+index f18e785..0f44525 100644
 --- a/tests/test_driver.pl
 +++ b/tests/test_driver.pl
-@@ -164,6 +164,10 @@ sub toplevel
+@@ -54,6 +54,7 @@ $test_passed = 1;
+ # Timeout in seconds.  If the test takes longer than this we'll fail it.
+ $test_timeout = 5;
+ $test_timeout = 10 if $^O eq 'VMS';
++$test_timeout = 30 if $^O eq 'os390';
+ 
+ # Path to Perl
+ $perl_name = $^X;
+@@ -164,6 +165,10 @@ sub toplevel
    foreach (# UNIX-specific things
             'TZ', 'TMPDIR', 'HOME', 'USER', 'LOGNAME', 'PATH',
             'LD_LIBRARY_PATH',
@@ -442,7 +717,7 @@ index f18e785..46544a5 100644
             # SAN things
             'ASAN_OPTIONS', 'UBSAN_OPTIONS',
             # Purify things
-@@ -392,15 +396,17 @@ sub get_osname
+@@ -392,15 +397,17 @@ sub get_osname
      # to not get ugly error messages if uname can't be found.
      # Hmmm, BSD/OS 2.0's uname -a is excessively verbose.  Let's try it
      # with switches first.
