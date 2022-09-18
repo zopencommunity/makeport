@@ -27,14 +27,18 @@ zopen_check_results()
 chk="$2_check.log"
 
 if grep "No Failures :-)" ${chk}; then
-  return 0
+  return $ZOPEN_TEST_STATUS_ALL_PASSED
 fi
 
 failures=$(grep ".* Test.*in .* Categories Failed" ${chk} | cut -f1 -d' ')
-if [ ${failures} -gt 10 ]; then
-  return 2
+if [ -z "${failures}" ]; then
+  return $ZOPEN_TEST_STATUS_ERROR
+fi
+
+if [ ${failures} -gt 100 ]; then
+  return $ZOPEN_TEST_STATUS_SOME_PASSED
 else
-  return 1
+  return $ZOPEN_TEST_STATUS_MOST_PASSED
 fi
 }
 
