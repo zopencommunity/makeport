@@ -26,19 +26,19 @@ zopen_check_results()
 {
 chk="$2_check.log"
 
-if grep "No Failures :-)" ${chk}; then
-  return $ZOPEN_TEST_STATUS_ALL_PASSED
+if grep ".* Tests.*No Failures :-)" ${chk} >/dev/null; then
+  totalTests=$(grep ".* Tests.*No Failures :-)" ${chk} | cut -f1 -d' ')
+  echo "0|$totalTests"
+  return
 fi
 
 failures=$(grep ".* Test.*in .* Categories Failed" ${chk} | cut -f1 -d' ')
-if [ -z "${failures}" ]; then
-  return $ZOPEN_TEST_STATUS_ERROR
-fi
+totalTests=$(grep ".* Test.*in .* Categories Failed" ${chk} | cut -f5 -d' ')
 
-if [ ${failures} -gt 100 ]; then
-  return $ZOPEN_TEST_STATUS_SOME_PASSED
-else
-  return $ZOPEN_TEST_STATUS_MOST_PASSED
-fi
+cat <<ZZ
+actualFailures:$failures
+totalTests:$totalTests
+expectedFailures:0
+ZZ
 }
 
