@@ -28,7 +28,11 @@ chk="$2_check.log"
 
 if grep ".* Tests.*No Failures :-)" ${chk} >/dev/null; then
   totalTests=$(grep ".* Tests.*No Failures :-)" ${chk} | cut -f1 -d' ')
-  echo "0|$totalTests"
+  cat <<ZZ
+actualFailures:0
+totalTests:$totalTests
+expectedFailures:0
+ZZ
   return
 fi
 
