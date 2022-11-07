@@ -1,4 +1,3 @@
-#!/bin/sh
 #
 # Set up environment variables for general build tool to operate
 #
@@ -24,7 +23,7 @@ export ZOPEN_EXTRA_CFLAGS="-O3"
 
 zopen_check_results()
 {
-chk="$2_check.log"
+chk="$1/$2_check.log"
 
 if grep ".* Tests.*No Failures :-)" ${chk} >/dev/null; then
   totalTests=$(grep ".* Tests.*No Failures :-)" ${chk} | cut -f1 -d' ')
