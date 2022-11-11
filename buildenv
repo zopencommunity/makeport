@@ -30,7 +30,7 @@ if grep ".* Tests.*No Failures :-)" ${chk} >/dev/null; then
   cat <<ZZ
 actualFailures:0
 totalTests:$totalTests
-expectedFailures:0
+expectedFailures:1
 ZZ
   return
 fi
