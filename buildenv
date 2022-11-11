@@ -36,7 +36,7 @@ ZZ
 fi
 
 failures=$(grep ".* Test.*in .* Categories Failed" ${chk} | cut -f1 -d' ')
-totalTests=$(grep ".* Test.*in .* Categories Failed" ${chk} | cut -f5 -d' ')
+totalTests=$(grep ".* Test.*in .* Categories Failed" ${chk} | cut -f4 -d' ')
 
 cat <<ZZ
 actualFailures:$failures
