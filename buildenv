@@ -3,23 +3,15 @@
 #
 export ZOPEN_TYPE="TARBALL"
 
-export ZOPEN_TARBALL_URL="https://ftp.gnu.org/gnu/make/make-4.3.tar.gz"
-export ZOPEN_TARBALL_DEPS="curl gzip m4 perl make" 
+export ZOPEN_TARBALL_URL="https://ftp.gnu.org/gnu/make/make-4.4.tar.gz"
+export ZOPEN_TARBALL_DEPS="curl gzip tar m4 perl make zoslib" 
 
 export ZOPEN_GIT_URL="https://git.savannah.gnu.org/git/make.git"
 export ZOPEN_GIT_DEPS="git make m4 perl autoconf automake help2man makeinfo xz"
-
-export ZOPEN_EXTRA_CFLAGS="-D_LARGE_TIME_API -D_OPEN_MSGQ_EXT -D_OPEN_SYS_FILE_EXT=1 -D_OPEN_SYS_SOCK_IPV6 -DPATH_MAX=1024 -D_UNIX03_SOURCE -D_UNIX03_THREADS -D_UNIX03_WITHDRAWN"
-export ZOPEN_EXTRA_LDFLAGS=""
-
-if [ "${ZOPEN_TYPE}x" = "TARBALLx" ]; then
-	export ZOPEN_BOOTSTRAP=skip
-	export ZOPEN_CHECK="${PWD}/make-4.3/make"
-fi
-
-export ZOPEN_MAKE="./build.sh"
 export ZOPEN_CHECK="${ZOPEN_ROOT}/makecheck.sh"
-export ZOPEN_EXTRA_CFLAGS="-O3"
+
+#export ZOPEN_EXTRA_CFLAGS="-D_LARGE_TIME_API -D_OPEN_MSGQ_EXT -D_OPEN_SYS_FILE_EXT=1 -D_OPEN_SYS_SOCK_IPV6 -DPATH_MAX=1024 -D_UNIX03_SOURCE -D_UNIX03_THREADS -D_UNIX03_WITHDRAWN"
+#export AR="/bin/ar"
 
 zopen_check_results()
 {
@@ -35,13 +27,14 @@ ZZ
   return
 fi
 
-failures=$(grep ".* Test.*in .* Categories Failed" ${chk} | cut -f1 -d' ')
-totalTests=$(grep ".* Test.*in .* Categories Failed" ${chk} | cut -f4 -d' ')
+failures=$(grep ".* Test.*in .* Categor.*Failed" ${chk} | cut -f1 -d' ')
+success=$(egrep "[0-9]+ passed" $chk | sed -e 's#.*[(/]\([0-9]\+\) passed)#\1#g' | awk '{s+=$1} END {print s}')
+totalTests=$((failures+success))
 
 cat <<ZZ
 actualFailures:$failures
 totalTests:$totalTests
-expectedFailures:1
+expectedFailures:14
 ZZ
 }
 
