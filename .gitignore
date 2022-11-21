@@ -4,3 +4,5 @@ make.local
 make
 tests/hw/hw
 *.o
+install/
+log/
