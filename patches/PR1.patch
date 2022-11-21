@@ -1,0 +1,247 @@
+diff --git a/src/arscan.c b/src/arscan.c
+index b6ed45a..eb55e45 100644
+--- a/src/arscan.c
++++ b/src/arscan.c
+@@ -331,7 +331,7 @@ ar_scan (const char *archive, ar_member_func_t function, const void *varg)
+ #endif
+ 
+ #ifndef WINDOWS32
+-# if !defined (__ANDROID__) && !defined (__BEOS__)
++# if !defined (__ANDROID__) && !defined (__BEOS__) && !defined(__MVS__)
+ #  include <ar.h>
+ # else
+    /* These platforms don't have <ar.h> but have archives in the same format
+diff --git a/src/config.h.in b/src/config.h.in
+index 7085a40..63b81f4 100644
+--- a/src/config.h.in
++++ b/src/config.h.in
+@@ -1208,3 +1208,8 @@
+ 
+ /* Define as `fork' if `vfork' does not work. */
+ #undef vfork
++
++#ifdef __MVS__
++/* fcntl does not support stdio file descriptors */
++#define NO_OUTPUT_SYNC
++#endif
+diff --git a/src/job.c b/src/job.c
+index b78f279..e44516f 100644
+--- a/src/job.c
++++ b/src/job.c
+@@ -2550,6 +2550,11 @@ exec_command (char **argv, char **envp)
+   if (errno == ENOENT)
+     errno = ENOEXEC;
+ 
++# elif __MVS__
++  /* In z/OS we can't set environ in ASCII. */
++  environ = envp;
++  execvpe(argv[0], argv, envp);
++
+ # else
+ 
+   /* Run the program.  Don't use execvpe() as we want the search for argv[0]
+@@ -2617,6 +2622,9 @@ exec_command (char **argv, char **envp)
+         pid = spawnvpe (P_NOWAIT, shell, new_argv, envp);
+         if (pid >= 0)
+           break;
++# elif __MVS__
++        /* In USS we can't set environ variable in ASCII mode. */
++        execvpe(shell, new_argv, envp);
+ # else
+         execvp (shell, new_argv);
+ # endif
+diff --git a/src/main.c b/src/main.c
+index eec9365..e1f4438 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -1152,7 +1152,12 @@ temp_stdin_unlink ()
+     }
+ }
+ 
+-#ifdef _AMIGA
++#if defined(_AMIGA) || defined(__MVS__)
++
++#ifdef __MVS__
++extern char **environ;
++#endif
++
+ int
+ main (int argc, char **argv)
+ #else
+@@ -1469,6 +1474,10 @@ main (int argc, char **argv, char **envp)
+      done before $(MAKE) is figured out so its definitions will not be
+      from the environment.  */
+ 
++#ifdef __MVS__
++  char **envp = environ;
++#endif
++
+ #ifndef _AMIGA
+   {
+     unsigned int i;
+@@ -1505,7 +1514,11 @@ main (int argc, char **argv, char **envp)
+ 
+         /* If this is MAKE_RESTARTS, check to see if the "already printed
+            the enter statement" flag is set.  */
++#ifdef __MVS__
++        if (len == 13 && __memcmp (envp[i], STRING_SIZE_TUPLE ("MAKE_RESTARTS")) == 0)
++#else
+         if (len == 13 && memcmp (envp[i], STRING_SIZE_TUPLE ("MAKE_RESTARTS")) == 0)
++#endif
+           {
+             if (*ep == '-')
+               {
+@@ -1987,7 +2000,7 @@ main (int argc, char **argv, char **envp)
+ # endif
+   }
+ 
+-#ifdef HAVE_PSELECT
++#if defined(HAVE_PSELECT) && !defined(__MVS__)
+   /* If we have pselect() then we need to block SIGCHLD so it's deferred.  */
+   {
+     sigset_t block;
+diff --git a/src/posixos.c b/src/posixos.c
+index 44aeb34..4b632a3 100644
+--- a/src/posixos.c
++++ b/src/posixos.c
+@@ -24,6 +24,10 @@ this program.  If not, see <https://www.gnu.org/licenses/>.  */
+ #elif defined(HAVE_SYS_FILE_H)
+ # include <sys/file.h>
+ #endif
++#ifdef __MVS__
++/* FIXME: HAVE_PSELECT path hangs on z/OS */
++#undef HAVE_PSELECT
++#endif
+ 
+ #if !defined(FD_OK)
+ # define FD_OK(_f) 1
+@@ -612,7 +616,7 @@ jobserver_acquire (int timeout)
+      go back and reap_children(), and try again.  */
+   errno = saved_errno;
+ 
+-  if (errno != EINTR && errno != EBADF)
++  if (errno != EINTR && errno != EBADF && errno != EAGAIN)
+     pfatal_with_name (_("read jobs pipe"));
+ 
+   if (errno == EBADF)
+diff --git a/tests/scripts/features/archives b/tests/scripts/features/archives
+index 809bf21..1504e79 100644
+--- a/tests/scripts/features/archives
++++ b/tests/scripts/features/archives
+@@ -214,7 +214,7 @@ if ($osname eq 'VMS') {
+ # Check long names for archive members.
+ # See Savannah bug #54395
+ 
+-if ($osname ne 'VMS') {
++if ($osname ne 'VMS' && $osname ne "os390") {
+     my $pre = '1234567890123456';
+     my $lib = 'libxx.a';
+     my $cr = $created;
+diff --git a/tests/scripts/features/shell_assignment b/tests/scripts/features/shell_assignment
+index 686e4bd..6885e22 100644
+--- a/tests/scripts/features/shell_assignment
++++ b/tests/scripts/features/shell_assignment
+@@ -19,10 +19,14 @@ all: ; @echo "<$(demo1)> <$(demo2)> <$(demo3)> <$(demo4)> <${demo5}>"
+               '', "<  1   2 3 4  5     6   > <7 8  > <7 8  > < 2 3 > < 2 3  >\n");
+ 
+ # TEST 1: Handle '#' the same way as BSD make
++$hashOctal="\\043";
++if ($osname eq "os390") {
++  $hashOctal="\\173";
++}
+ 
+ run_make_test('
+ foo1!=echo bar#baz
+-hash != printf \'\043\'
++hash != printf \'' . $hashOctal . '\'
+ foo2!= echo "bar$(hash)baz"
+ 
+ all: ; @echo "<$(foo1)> <$(hash)> <$(foo2)>"
+diff --git a/tests/scripts/features/temp_stdin b/tests/scripts/features/temp_stdin
+index b06df53..3ac5e4f 100644
+--- a/tests/scripts/features/temp_stdin
++++ b/tests/scripts/features/temp_stdin
+@@ -73,7 +73,7 @@ pid:=$(shell echo $$PPID)
+ all:;
+ bye.mk: force; @kill -TERM $(pid) && sleep 16
+ force:
+-!, '-f-', '/#MAKE#: \*\*\* \[#MAKEFILE#:5: bye.mk] Terminated/', POSIX::SIGTERM);
++!, '-f-', $^O =~ /os390/ ? '#MAKE#: *** [#MAKEFILE#:5: bye.mk] Error 143' : '/#MAKE#: \*\*\* \[#MAKEFILE#:5: bye.mk] Terminated/', POSIX::SIGTERM);
+ }
+ unlink($fout);
+ 
+diff --git a/tests/scripts/functions/shell b/tests/scripts/functions/shell
+index d89a0c8..497df81 100644
+--- a/tests/scripts/functions/shell
++++ b/tests/scripts/functions/shell
+@@ -148,7 +148,9 @@ all: ; @echo $(.SHELLSTATUS)
+        # Solaris 10 perl 5.8.4 puts signal number + 128 into the high 8 bits.
+        $ret >>= 8;
+     }
+-    $ret |= 128;
++    if ($osname ne "os390") {
++      $ret |= 128;
++    }
+ 
+     run_make_test('.PHONY: all
+ $(shell kill -2 $$$$)
+diff --git a/tests/scripts/targets/ONESHELL b/tests/scripts/targets/ONESHELL
+index f9da14b..a6383bf 100644
+--- a/tests/scripts/targets/ONESHELL
++++ b/tests/scripts/targets/ONESHELL
+@@ -115,7 +115,7 @@ all:; @print "it works\n"
+ SHELL = #PERL#
+ .SHELLFLAGS =
+ all:; @print "it works"
+-!, '', "Can't open perl script \"print \"it works\"\": $ERR_no_such_file\n#MAKE#: *** [#MAKEFILE#:5: all] Error 2", 512);
++!, '', "Can't open perl script \"print \"it works\"\": $ERR_no_such_file\n#MAKE#: *** [#MAKEFILE#:5: all] " . ($^O =~ /os390/ ? "Error 129" : "Error 2"), 512);
+ 
+     # No .SHELLFLAGS.
+     # sv 61805.
+@@ -123,7 +123,7 @@ all:; @print "it works"
+ .ONESHELL:
+ SHELL = #PERL#
+ all:; @print "it works"
+-!, '', "Can't open perl script \"print \"it works\"\": $ERR_no_such_file\n#MAKE#: *** [#MAKEFILE#:4: all] Error 2", 512);
++!, '', "Can't open perl script \"print \"it works\"\": $ERR_no_such_file\n#MAKE#: *** [#MAKEFILE#:4: all] " . ($^O =~ /os390/ ? "Error 129" : "Error 2"), 512);
+ 
+     # Pass a quoted string with spaces to oneshell.
+     # sv 61805.
+diff --git a/tests/test_driver.pl b/tests/test_driver.pl
+index b64fffb..c8fba17 100644
+--- a/tests/test_driver.pl
++++ b/tests/test_driver.pl
+@@ -202,6 +202,9 @@ sub toplevel
+            'PURIFYOPTIONS',
+            # Windows-specific things
+            'Path', 'SystemRoot', 'TEMP', 'TMP', 'USERPROFILE', 'PATHEXT',
++           # z/OS specific things
++           'LIBPATH', '_BPXK_AUTOCVT',
++           '_TAG_REDIR_IN',  '_TAG_REDIR_OUT',
+            # DJGPP-specific things
+            'DJDIR', 'DJGPP', 'SHELL', 'COMSPEC', 'HOSTNAME', 'LFN',
+            'FNCASE', '387', 'EMU387', 'GROUP'
+@@ -856,6 +859,23 @@ sub compare_output
+ 
+       $answer_matched = ($slurp_mod eq $answer_mod);
+ 
++      if (!$answer_matched && $^O eq 'os390') {
++        # z/OS emits 143 instead of terminated
++        if (!$answer_matched) {
++          $slurp_mod =~ s/Error 143/Terminated/gm;
++          $answer_matched = ($slurp_mod eq $answer_mod);
++        }
++        # z/OS error message has a prefix
++        if (!$answer_matched) {
++          $slurp_mod =~ s/EDC5129I No such file or directory./No such file or directory/gm;
++          $answer_matched = ($slurp_mod eq $answer_mod);
++        }
++        if (!$answer_matched) {
++          $slurp_mod =~ s/FSUM7351 not found/not found/gm;
++          $answer_matched = ($slurp_mod eq $answer_mod);
++        }
++      }
++
+       if (!$answer_matched && $^O eq 'VMS') {
+ 
+         # VMS has extra blank lines in output sometimes.
