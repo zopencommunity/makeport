@@ -9,6 +9,7 @@ export ZOPEN_TARBALL_DEPS="curl gzip tar m4 perl make zoslib"
 export ZOPEN_GIT_URL="https://git.savannah.gnu.org/git/make.git"
 export ZOPEN_GIT_DEPS="git make m4 perl autoconf automake help2man texinfo xz"
 export ZOPEN_CHECK="${ZOPEN_ROOT}/makecheck.sh"
+export ZOPEN_INSTALL="./make"
 
 zopen_check_results()
 {
