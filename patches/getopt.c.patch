@@ -1,0 +1,16 @@
+diff --git a/src/getopt.c b/src/getopt.c
+index 7a792de..a40bf5e 100644
+--- a/src/getopt.c
++++ b/src/getopt.c
+@@ -22,9 +22,11 @@ this program.  If not, see <https://www.gnu.org/licenses/>.  */
+ 
+ /* This tells Alpha OSF/1 not to define a getopt prototype in <stdio.h>.
+    Ditto for AIX 3.2 and <stdlib.h>.  */
++#ifndef __MVS__ /* This causes z/OS clang to optimize out fprintf */
+ #ifndef _NO_PROTO
+ # define _NO_PROTO
+ #endif
++#endif
+ 
+ #ifdef HAVE_CONFIG_H
+ # include <config.h>
