@@ -3,7 +3,7 @@
 #
 export ZOPEN_TYPE="TARBALL"
 
-export ZOPEN_TARBALL_URL="https://alpha.gnu.org/gnu/make/make-4.4.0.90.tar.gz"
+export ZOPEN_TARBALL_URL="https://ftp.gnu.org/gnu/make/make-4.4.1.tar.gz"
 export ZOPEN_TARBALL_DEPS="curl gzip tar m4 perl make zoslib" 
 
 export ZOPEN_GIT_URL="https://git.savannah.gnu.org/git/make.git"
