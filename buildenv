@@ -2,13 +2,14 @@
 # Set up environment variables for general build tool to operate
 #
 export ZOPEN_TYPE="TARBALL"
+MAKE_VERSION="4.4.1"
 
-export ZOPEN_TARBALL_URL="https://ftp.gnu.org/gnu/make/make-4.4.1.tar.gz"
+export ZOPEN_TARBALL_URL="https://ftp.gnu.org/gnu/make/make-$MAKE_VERSION.tar.gz"
 export ZOPEN_TARBALL_DEPS="curl gzip tar m4 perl make zoslib" 
 
 export ZOPEN_GIT_URL="https://git.savannah.gnu.org/git/make.git"
 export ZOPEN_GIT_DEPS="git make m4 perl autoconf automake help2man texinfo xz"
-export ZOPEN_CHECK="${ZOPEN_ROOT}/makecheck.sh"
+export ZOPEN_CHECK="check_make"
 export ZOPEN_INSTALL="install_make"
 export ZOPEN_COMP=CLANG
 
@@ -16,6 +17,11 @@ export ZOPEN_COMP=CLANG
 install_make()
 {
   ./make install "$@"
+}
+
+check_make()
+{
+(cd "${ZOPEN_ROOT}/make-$MAKE_VERSION/tests" && perl ./run_make_tests.pl -srcdir ../ -make ../make 2>&1)
 }
 
 zopen_check_results()
