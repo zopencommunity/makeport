@@ -49,3 +49,7 @@ expectedFailures:0
 ZZ
 }
 
+zopen_get_version()
+{
+  ./make --version | head -1 | awk ' { print $3; }'
+}
