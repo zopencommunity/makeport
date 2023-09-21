@@ -1,14 +1,14 @@
 #
 # Set up environment variables for general build tool to operate
 #
-export ZOPEN_TYPE="TARBALL"
+export ZOPEN_BUILD_LINE="STABLE"
 MAKE_VERSION="4.4.1"
 
-export ZOPEN_TARBALL_URL="https://ftp.gnu.org/gnu/make/make-$MAKE_VERSION.tar.gz"
-export ZOPEN_TARBALL_DEPS="curl gzip tar m4 perl make zoslib" 
+export ZOPEN_STABLE_URL="https://ftp.gnu.org/gnu/make/make-$MAKE_VERSION.tar.gz"
+export ZOPEN_STABLE_DEPS="curl gzip tar m4 perl make zoslib"
 
-export ZOPEN_GIT_URL="https://git.savannah.gnu.org/git/make.git"
-export ZOPEN_GIT_DEPS="git make m4 perl autoconf automake help2man texinfo xz"
+export ZOPEN_DEV_URL="https://git.savannah.gnu.org/git/make.git"
+export ZOPEN_DEV_DEPS="git make m4 perl autoconf automake help2man texinfo xz"
 export ZOPEN_CHECK="check_make"
 export ZOPEN_INSTALL="install_make"
 export ZOPEN_COMP=CLANG
@@ -39,7 +39,7 @@ ZZ
 fi
 
 failures=$(grep ".* Test.*in .* Categor.*Failed" ${chk} | cut -f1 -d' ')
-success=$(egrep "[0-9]+ passed" $chk | sed -e 's#.*[(/]\([0-9]\+\) passed)#\1#g' | awk '{s+=$1} END {print s}')
+success=$(grep -E "[0-9]+ passed" $chk | sed -e 's#.*[(/]\([0-9]\+\) passed)#\1#g' | awk '{s+=$1} END {print s}')
 totalTests=$((failures+success))
 
 cat <<ZZ

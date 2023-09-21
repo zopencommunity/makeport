@@ -7,3 +7,4 @@ tests/hw/hw
 *.o
 install/
 log/
+log.STABLE
