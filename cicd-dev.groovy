@@ -4,7 +4,7 @@ node('linux')
   stage ('Poll') {
                // Poll from upstream:
                checkout([
-                                               $class: 'GitSCM',: 'GitSCM',
+                       $class: 'GitSCM',: 'GitSCM',
                        branches: [[name: '*/4.4.1']],
                        doGenerateSubmoduleConfigurations: false,
                        extensions: [],
@@ -20,9 +20,10 @@ node('linux')
   }
 
   stage('Build') {
-                build job: 'Port-Pipeline', parameters: [
-
-  string(name: 'BUILD_LINE', value: 'DEV')]
+    build job: 'Port-Pipeline', parameters: [
+    string(name: 'PORT_GITHUB_REPO', value: 'https://github.com/ZOSOpenTools/makeport.git'),
+    string(name: 'PORT_DESCRIPTION', value: 'GNU Make is a tool which controls the generation of executables and other non-source files of a program from program source files.'),
+    string(name: 'BUILD_LINE', value: 'DEV')]
   }
 }
 
