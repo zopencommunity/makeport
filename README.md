@@ -1,4 +1,6 @@
-# makeport
+[![Automatic version updates](https://github.com/ZOSOpenTools/makeport/actions/workflows/bump.yml/badge.svg)](https://github.com/ZOSOpenTools/makeport/actions/workflows/bump.yml)
+
+# mak
 Place to share information about configure/build of GNU Make for z/OS (only deltas to open source)
 
 # pre-reqs
