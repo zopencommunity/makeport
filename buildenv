@@ -16,8 +16,6 @@ export ZOPEN_COMP=CLANG
 install_make()
 {
   ./make install "$@"
-  # Make a copy instead of a link for gmake so that make can be removed if necessary
-  cp $ZOPEN_INSTALL_DIR/bin/make $ZOPEN_INSTALL_DIR/bin/gmake
 }
 
 check_make()
@@ -48,6 +46,13 @@ actualFailures:$failures
 totalTests:$totalTests
 expectedFailures:1
 ZZ
+}
+
+zopen_post_install()
+{
+  mv $ZOPEN_INSTALL_DIR/bin/make $ZOPEN_INSTALL_DIR/bin/gmake
+  mkdir $ZOPEN_INSTALL_DIR/altbin
+  ln -s ../bin/gmake $ZOPEN_INSTALL_DIR/altbin/make
 }
 
 zopen_get_version()
