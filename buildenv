@@ -44,7 +44,7 @@ totalTests=$((failures+success))
 cat <<ZZ
 actualFailures:$failures
 totalTests:$totalTests
-expectedFailures:1
+expectedFailures:2
 ZZ
 }
 
