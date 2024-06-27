@@ -16,8 +16,6 @@ export ZOPEN_COMP=CLANG
 install_make()
 {
   ./make install "$@"
-  # Make a copy instead of a link for gmake so that make can be removed if necessary
-  cp $ZOPEN_INSTALL_DIR/bin/make $ZOPEN_INSTALL_DIR/bin/gmake
 }
 
 check_make()
@@ -48,6 +46,22 @@ actualFailures:$failures
 totalTests:$totalTests
 expectedFailures:1
 ZZ
+}
+
+zopen_install_caveats()
+{
+cat <<ZZ
+GNU Make has been installed as gmake under bin/ to avoid collision with z/OS /bin/make tool.
+If you prefer to use the make as is, source `zopen-config` with the option --override-zos-tools.
+Or add \$ZOPEN_ROOTFS/usr/local/altbin to your \$PATH.
+ZZ
+}
+
+zopen_post_install()
+{
+  mv $ZOPEN_INSTALL_DIR/bin/make $ZOPEN_INSTALL_DIR/bin/gmake
+  mkdir $ZOPEN_INSTALL_DIR/altbin
+  ln -s ../bin/gmake $ZOPEN_INSTALL_DIR/altbin/make
 }
 
 zopen_get_version()
