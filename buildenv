@@ -2,6 +2,7 @@
 # Deliberately misspelt so that CMAKE's regex also doesn't catch this
 MMAKE_VERSION="4.4.1"
 
+export ZOPEN_CATEGORIES="development build_system"
 export ZOPEN_BUILD_LINE="STABLE"
 export ZOPEN_STABLE_URL="https://ftp.gnu.org/gnu/make/make-${MMAKE_VERSION}.tar.gz"
 export ZOPEN_STABLE_DEPS="curl gzip tar m4 perl make zoslib"
