@@ -70,6 +70,12 @@ zopen_post_install()
   ln -s ../../man/man1/gmake.1 $ZOPEN_INSTALL_DIR/share/altman/man1/make.1
 }
 
+zopen_append_to_zoslib_env() {
+cat <<EOF
+_ENCODE_FILE_NEW|unset|
+EOF
+}
+
 zopen_get_version()
 {
   ./make --version | head -1 | awk ' { print $3; }'
