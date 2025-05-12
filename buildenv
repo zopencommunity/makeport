@@ -13,6 +13,9 @@ export ZOPEN_CHECK="check_make"
 export ZOPEN_INSTALL="install_make"
 export ZOPEN_COMP=CLANG
 
+export ZOPEN_EXTRA_CFLAGS="-mzos-target=zosv2r5 -march=z13"
+export ZOPEN_SYSTEM_PREREQS="zos25"
+
 # Use a function as ./make doesn't exist at buildenv processing
 install_make()
 {
