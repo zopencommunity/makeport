@@ -52,27 +52,6 @@ expectedFailures:2
 ZZ
 }
 
-zopen_install_caveats()
-{
-cat <<ZZ
-GNU make has been installed as gmake under the bin/ dir to avoid collision with z/OS /bin/make.
-The conflicting manpages have been installed under the share/altman dir. You can use zotman to view
-the manpages as such: zotman gmake
-If you prefer to use the GNU make as make, source zopen-config with the option --override-zos-tools.
-ZZ
-}
-
-zopen_post_install()
-{
-  mv $ZOPEN_INSTALL_DIR/bin/make $ZOPEN_INSTALL_DIR/bin/gmake
-  mkdir $ZOPEN_INSTALL_DIR/altbin
-  ln -s ../bin/gmake $ZOPEN_INSTALL_DIR/altbin/make
-
-  mkdir -p $ZOPEN_INSTALL_DIR/share/altman/man1
-  mv $ZOPEN_INSTALL_DIR/share/man/man1/make.1 $ZOPEN_INSTALL_DIR/share/man/man1/gmake.1
-  ln -s ../../man/man1/gmake.1 $ZOPEN_INSTALL_DIR/share/altman/man1/make.1
-}
-
 zopen_append_to_zoslib_env() {
 cat <<EOF
 _ENCODE_FILE_NEW|unset|
